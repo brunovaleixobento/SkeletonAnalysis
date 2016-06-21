@@ -5,5 +5,5 @@ There are two macros here:
 
 Both macros are to be executed using the root interpreter.
 The macros can be run in either compiled or interactive mode, I recommend usng the compiled mode since it avoids some of the pitfalls of using the root interpreter.
- * compiled - Use the command 'root [macro_name]+'
- * interactive - Use the command 'root [macro_name]'
+ * compiled - Use the command `root [macro_name]+`
+ * interactive - Use the command `root [macro_name]`
