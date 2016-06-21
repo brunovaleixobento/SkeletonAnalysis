@@ -27,3 +27,7 @@
 *.exe
 *.out
 *.app
+
+# Weird ROOT compiled macros
+*_C.d
+*_ACLiC_*.pcm
