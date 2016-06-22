@@ -16,6 +16,13 @@ int main(int argc, char** argv)
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
+
+  // Get the total initial number of events from the ttree
+  int Nevt = 0;
+  ttbarTree->SetBranchAddress("Nevt", &Nevt);
+  ttbarTree->GetEntry(0);
+  std::cout << "The total number of initial events: " << Nevt << std::endl;
+
   double tmpDouble = 0.0;
   // Get number of events from TTree
   // In principle the `GetEntries()` method from the TTree, however, for a more general result
