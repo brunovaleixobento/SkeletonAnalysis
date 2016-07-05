@@ -18,7 +18,7 @@ class variable{
 
 public:
 
-  variable(string name="", string expression = "", int bins=30, double xmin=0, double xmax=100, string leg = "");  
+  variable(string name="", string expression = "", int bins=30, double xmin=0, double xmax=100, string leg = "");
 
   string GetName() {return fname;}
   string GetExpression() {return fexpression;}
@@ -33,7 +33,7 @@ public:
   void SetXMin(double xmin) {fxmin=xmin;}
   void SetXMax(double xmax) {fxmax=xmax;}
   void SetLeg(string leg) {fleg=leg;}
- 
+
 private:
 
   string fname;
@@ -55,10 +55,9 @@ int plotVar()
   variable var4("Jet1Pt","Jet1Pt",100,0,400,"p_{T} (Jet1) [GeV]");
   variable var5("Jet1Eta","Jet1Eta",100,-3,3,"Eta (Jet1)");
   variable var6("Met","Met",30,100,300,"Met [GeV]");
-  variable var7("CosDeltaPhi","CosDeltaPhi",30,-1.2,1.2,"Cos(#Delta #Phi)");  
-  variable var8("Jet1Pt+Met","Jet1Pt+Met",30,200,600,"Met+Jet1Pt");  
-  variable var9("Jet2Pt","Jet2Pt",30,200,600,"p_{T} (jet2) [MeV]");  
- 
+  variable var7("CosDeltaPhi","CosDeltaPhi",30,-1.2,1.2,"Cos(#Delta #Phi)");
+  variable var8("Jet1Pt+Met","Jet1Pt+Met",30,200,600,"Met+Jet1Pt");
+  variable var9("Jet2Pt","Jet2Pt",30,200,600,"p_{T} (jet2) [MeV]");
   vvariable.push_back(var1);
   vvariable.push_back(var2);
   vvariable.push_back(var3);
@@ -95,6 +94,7 @@ int plotVar()
 	c1->Divide((vvariable.size()+1)/2,2);
     }
 
+
   for(int i=0;i<vvariable.size();i++)
     {
   // Create histogram(s)
@@ -126,7 +126,7 @@ int plotVar()
  stopH->Draw("same");
 
  if(Stack->GetMaximum() > stopH->GetMaximum())
-   {   
+   {
      Stack->SetMaximum(Stack->GetMaximum()*1.05);
    }
  else
@@ -136,11 +136,10 @@ int plotVar()
 
  TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
- c1->SaveAs(("plots/" + vvariable[i].GetName() + ".pdf").c_str());
- c1->SaveAs(("plots/" + vvariable[i].GetName() + ".C").c_str());
-   
  }
  // Continue...
+ c1->SaveAs(("plots/plot.pdf").c_str());
+ c1->SaveAs(("plots/plot.C").c_str());
 
   return 0;
 }
