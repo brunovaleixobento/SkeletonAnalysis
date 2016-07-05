@@ -1,5 +1,5 @@
 # SkeletonAnalysis
-Codebase of a skeleton HEP analysis using ROOT.
+Codebase of a skeleton HEP analysis using ROOT, com alteracoes.
 
 There are two versions of the code, one using macros, which require the ROOT interpreter and are run through the ROOT interpreter.
 The other version uses standalone binaries.

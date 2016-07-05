@@ -58,6 +58,7 @@ int plotVar()
   variable var7("CosDeltaPhi","CosDeltaPhi",30,-1.2,1.2,"Cos(#Delta #Phi)");
   variable var8("Jet1Pt+Met","Jet1Pt+Met",30,200,600,"Met+Jet1Pt");
   variable var9("Jet2Pt","Jet2Pt",30,200,600,"p_{T} (jet2) [MeV]");
+
   vvariable.push_back(var1);
   vvariable.push_back(var2);
   vvariable.push_back(var3);
@@ -69,15 +70,17 @@ int plotVar()
   vvariable.push_back(var9);
 
   // Open input file(s)
-  TFile* ttbarFile = new TFile("~cbeiraod/public/4Students/TTJets_LO_bdt.root", "READ");
+  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/Frozen/";
 
-  TFile* stopFile = new TFile("~cbeiraod/public/4Students/T2DegStop_300_270_bdt.root", "READ");
+  TFile* ttbarFile = new TFile((basedirectory + "TTJets_LO_bdt.root").c_str(), "READ");
+
+  TFile* stopFile = new TFile((basedirectory + "T2DegStop_300_270_bdt.root").c_str(), "READ");
 
   TChain wjetsTree("bdttree"); //creates a chain to process a Tree called "bdttree"
-  wjetsTree.Add("~cbeiraod/public/4Students/Wjets100to200_bdt.root");
-  wjetsTree.Add("~cbeiraod/public/4Students/Wjets200to400_bdt.root");
-  wjetsTree.Add("~cbeiraod/public/4Students/Wjets400to600_bdt.root");
-  wjetsTree.Add("~cbeiraod/public/4Students/Wjets600toInf_bdt.root");
+  wjetsTree.Add((basedirectory + "Wjets100to200_bdt.root").c_str());
+  wjetsTree.Add((basedirectory + "Wjets200to400_bdt.root").c_str());
+  wjetsTree.Add((basedirectory + "Wjets400to600_bdt.root").c_str());
+  wjetsTree.Add((basedirectory + "Wjets600toInf_bdt.root").c_str());
 
   // Get ttree(s) from input file(s)
   TTree* ttbarTree = static_cast<TTree*>(ttbarFile->Get("bdttree"));
@@ -122,8 +125,8 @@ int plotVar()
  Stack->Add(ttbarH);
  Stack->Add(wjetsH);
 
- Stack->Draw();
- stopH->Draw("same");
+ Stack->Draw("HIST");
+ stopH->Draw("HIST same");
 
  if(Stack->GetMaximum() > stopH->GetMaximum())
    {
@@ -137,6 +140,7 @@ int plotVar()
  TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
  }
+
  // Continue...
  c1->SaveAs(("plots/plot.pdf").c_str());
  c1->SaveAs(("plots/plot.C").c_str());
