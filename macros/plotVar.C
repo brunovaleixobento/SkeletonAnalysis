@@ -87,6 +87,7 @@ int plotVar()
   TTree* stopTree = static_cast<TTree*>(stopFile->Get("bdttree"));
 
   TCanvas * c1 = new TCanvas("Stop","Stop", 800, 600);
+  TCanvas * c2 = new TCanvas("variable","variable", 800, 600);
 
  //divide canvas
   if(vvariable.size()!=1)
@@ -139,11 +140,19 @@ int plotVar()
 
  TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
+ c2->cd();
+ Stack->Draw("HIST goff");
+ stopH->Draw("HIST same");
+ 
+ TLegend * legenda2 = c2->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
+
+ c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
+ c2->SaveAs(("plots/"+vvariable[i].GetName()+".C").c_str());
  }
 
  // Continue...
- c1->SaveAs(("plots/plot.pdf").c_str());
- c1->SaveAs(("plots/plot.C").c_str());
+ c1->SaveAs("plots/plot.pdf");
+ c1->SaveAs("plots/plot.C");
 
   return 0;
 }
