@@ -11,6 +11,7 @@
 #include "TPad.h"
 #include "string"
 #include "TAxis.h"
+#include "TCut.h"
 
 using std::string;
 
@@ -65,18 +66,18 @@ int plotVar()
   variable HT30("HT30","HT30",100,0,2000,"HT30 [GeV]");
 
   vvariable.push_back(LepPt);
-  vvariable.push_back(LepEta);
+  //vvariable.push_back(LepEta);
   vvariable.push_back(Njet);
   vvariable.push_back(Jet1Pt);
-  vvariable.push_back(Jet1Eta);
+  //vvariable.push_back(Jet1Eta);
   vvariable.push_back(Met);
-  vvariable.push_back(CosDPhi);
+  /*vvariable.push_back(CosDPhi);
   vvariable.push_back(DrJet1Lep);
   vvariable.push_back(DrJet2Lep);
   vvariable.push_back(Jet2Pt);
   vvariable.push_back(mt);
   vvariable.push_back(HT20);
-  vvariable.push_back(HT30);
+  vvariable.push_back(HT30);*/
 
   // Open input file(s)
   string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/Frozen/";
@@ -113,54 +114,71 @@ int plotVar()
 	}
     }
 
+    vector<TH1D*> ttbarH;
+    vector<TH1D*> wjetsH;
+    vector<TH1D*> stopH;
+
   // Plots
   for(int i=0;i<int(vvariable.size());i++)
     {
+      string sttbarH =  "ttbarH"+std::to_string(i);
+      string swjetsH =  "wjetsH"+std::to_string(i);
+      string sstopH =  "stopH"+std::to_string(i);
+
       // Create histogram(s)
-      TH1D* ttbarH= new TH1D("ttbarH", "ttbar", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax());
-      TH1D* wjetsH = new TH1D("wjetsH", "wjets", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax());
-      TH1D* stopH = new TH1D("stopH", "Signal*100", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax());
+      ttbarH.push_back(new TH1D(sttbarH.c_str(), "ttbar", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
+      wjetsH.push_back(new TH1D(swjetsH.c_str(), "wjets", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
+      stopH.push_back(new TH1D(sstopH.c_str(), "Signal*100", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
 
-      ttbarH->SetFillColor(kGreen);
-      ttbarH->SetLineColor(kGreen);
+      ttbarH[i]->SetFillColor(kGreen);
+      ttbarH[i]->SetLineColor(kGreen);
 
-      wjetsH->SetFillColor(kBlue);
-      wjetsH->SetLineColor(kBlue);
+      wjetsH[i]->SetFillColor(kBlue);
+      wjetsH[i]->SetLineColor(kBlue);
 
-      stopH->SetLineColor(kRed);
+      //stopH->SetFillColor(kRed);
+      stopH[i]->SetLineColor(kRed);
 
        if(vvariable.size()!=1)
 	c1->cd(i+1);
       else
 	c1->cd();
 
-      // Fill histogram(s)
-      ttbarTree->Draw((vvariable[i].GetExpression()+">>ttbarH").c_str(),"XS*10000/Nevt","goff");
-      wjetsTree->Draw((vvariable[i].GetExpression()+">>wjetsH").c_str(),"XS*10000/Nevt","goff");
-      stopTree->Draw((vvariable[i].GetExpression()+">>stopH").c_str(),"XS*10000/Nevt*100","goff");  //MULTIPLICAR O SINAL
+      //Create TCuts
+      TCut muon = "(abs(LepID)==13)&&(LepIso03<0.2)";
+      TCut electron = "(abs(LepID)==11)&&(LepIso03<0.2)";
+      TCut emu = muon||electron;
+      TCut ISRjet = "Jet1Pt > 110";
+      TCut met = "Met > 160";
+      TCut njets = "Njet > 1";
 
+      // Fill histogram(s)
+      ttbarTree->Draw((vvariable[i].GetExpression()+">>"+sttbarH).c_str(),"XS*10000/Nevt"*(emu&&ISRjet&&met&&njets),"goff");
+      wjetsTree->Draw((vvariable[i].GetExpression()+">>"+swjetsH).c_str(),"XS*10000/Nevt"*(emu&&ISRjet&&met&&njets),"goff");
+      stopTree->Draw((vvariable[i].GetExpression()+">>"+sstopH).c_str(),"XS*10000/Nevt*100"*(emu&&ISRjet&&met&&njets),"goff");  //MULTIPLICAR O SINAL
 
       THStack *Stack = new THStack(vvariable[i].GetName().c_str(), (vvariable[i].GetName()+";"+vvariable[i].GetLeg().c_str()+";Evt.").c_str());
-      Stack->Add(ttbarH);
-      Stack->Add(wjetsH);
+      Stack->Add(ttbarH[i]);
+      Stack->Add(wjetsH[i]);
 
       // Draw plots
       Stack->Draw("HIST");
-      stopH->Draw("HIST same");
+      stopH[i]->Draw("HIST same");
 
-      if(Stack->GetMaximum() > stopH->GetMaximum())
-	{
-	  Stack->SetMaximum(Stack->GetMaximum()*1.05);	}
+      if(Stack->GetMaximum() > stopH[i]->GetMaximum())
+	      {
+	        Stack->SetMaximum(Stack->GetMaximum()*1.05);
+	    	}
       else
-	{
-	  Stack->SetMaximum(stopH->GetMaximum()*1.05);
-	}
+	      {
+	        Stack->SetMaximum(stopH[i]->GetMaximum()*1.05);
+	      }
 
       TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
       c2->cd();
       Stack->Draw("HIST goff");
-      stopH->Draw("HIST same goff");
+      stopH[i]->Draw("HIST same goff");
 
       TLegend * legenda2 = c2->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
@@ -169,6 +187,7 @@ int plotVar()
       c2->SaveAs(("plots/"+vvariable[i].GetName()+".C").c_str());
     }
   delete c2;
+//delete the vectors
 
   //Save file with all the plots
   c1->SaveAs("plots/plot.pdf");
