@@ -22,7 +22,10 @@ public:
   int GetNexp_nosel() {return Nexp_nosel;}
   int GetNexp_sel() {return Nexp_sel;}
   string GetSelection() {return fselection;}
-
+  
+  
+  void SetNevt_nosel(int evt_nosel) {Nexp_nosel = evt_nosel;}
+  void SetNevt_sel(int evt_sel) {Nexp_sel = evt_sel;}
   void SetSelection(string selection) {fselection = selection;}
 
 private:
@@ -61,6 +64,8 @@ void countEvt(process &process, string selection="")
   Nexp_sel = tmp->Integral();
 
   process.SetSelection(selection);
+  process.SetNevt_nosel(Nexp_nosel);
+  process.SetNevt_sel(Nexp_sel);
 
   std::cout << Nexp_nosel << " expected events without selection" << std::endl;
   std::cout << Nexp_sel << " expected events after requiring " + selection << std::endl;
@@ -70,32 +75,32 @@ void Print(vector<process> vprocess, string selection)
 {
   ofstream yieldFile;
   yieldFile.open ("yield.txt");
-  //  yieldFile << "\documentclass{article}" << std::endl;
-  //yieldFile << "\usepackage[utf8]{inputenc}" << std::endl;
-  //yieldFile << "\title{Cms2016}" << std::endl;
-  //yieldFile << "\author{Bia Bruno}" << std::endl;
-  //yieldFile << "\date{July 2016}" << std::endl;
-  //yieldFile << "\begin{document}" << std::endl;
-  //yieldFile << "\maketitle" << std::endl;
+  yieldFile << "\\documentclass{article}" << std::endl;
+  yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
+  yieldFile << "\\title{Cms2016}" << std::endl;
+  yieldFile << "\\author{Bia Bruno}" << std::endl;
+  yieldFile << "\\date{July 2016}" << std::endl;
+  yieldFile << "\\begin{document}" << std::endl;
+  yieldFile << "\\maketitle" << std::endl;
 
-  //  yieldFile << "\begin{table}[]" << std::endl;
-  //yieldFile << "\centering" << std::endl;
-  //yieldFile << "\caption{My caption}" << std::endl;
-  //yieldFile << "\begin{tabular}{ll}" << std::endl;
-  //yieldFile << "\toprule" << std::endl;
-  yieldFile << "Process & Total & Yield (" + selection +  ") \\" << std::endl;
-  //yieldFile << "\middlerule" << std::endl;
+  yieldFile << "\\begin{table}[]" << std::endl;
+  yieldFile << "\\centering" << std::endl;
+  yieldFile << "\\caption{My caption}" << std::endl;
+  yieldFile << "\\begin{tabular}{ll}" << std::endl;
+  yieldFile << "\\toprule" << std::endl;
+  yieldFile << "Process & Total & Yield (" << selection <<  ") \\\\" << std::endl;
+  yieldFile << "\\middlerule" << std::endl;
 
   for(int k=0; k<int(vprocess.size()); k++)
     {
       yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << std::endl;
     }
 
-  //yieldFile << "\bottomrule" << std::endl;
-  //yieldFile << "\end{tabular}" << std::endl;
-  //yieldFile << "\end{table}" << std::endl;
+  yieldFile << "\\bottomrule" << std::endl;
+  yieldFile << "\\end{tabular}" << std::endl;
+  yieldFile << "\\end{table}" << std::endl;
 
-  //yieldFile << "\end{document}" << std::endl;
+  yieldFile << "\\end{document}" << std::endl;
 }
 
 int printYield()
