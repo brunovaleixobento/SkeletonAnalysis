@@ -22,7 +22,10 @@ public:
   int GetNexp_nosel() {return Nexp_nosel;}
   int GetNexp_sel() {return Nexp_sel;}
   string GetSelection() {return fselection;}
-
+  
+  
+  void SetNevt_nosel(int evt_nosel) {Nexp_nosel = evt_nosel;}
+  void SetNevt_sel(int evt_sel) {Nexp_sel = evt_sel;}
   void SetSelection(string selection) {fselection = selection;}
 
 private:
@@ -61,6 +64,8 @@ void countEvt(process &process, string selection="")
   Nexp_sel = tmp->Integral();
 
   process.SetSelection(selection);
+  process.SetNevt_nosel(Nexp_nosel);
+  process.SetNevt_sel(Nexp_sel);
 
   std::cout << Nexp_nosel << " expected events without selection" << std::endl;
   std::cout << Nexp_sel << " expected events after requiring " + selection << std::endl;
@@ -83,12 +88,14 @@ void Print(vector<process> vprocess, string selection)
   yieldFile << "\\caption{My caption}" << std::endl;
   yieldFile << "\\begin{tabular}{ll}" << std::endl;
   yieldFile << "\\toprule" << std::endl;
-  yieldFile << "Process & Total & Yield (" << vprocess[k].GetSelection() <<  ") \\\\" << std::endl;
+
+ 
+  yieldFile << "Process & Total & Yield (" << selection <<  ") \\\\" << std::endl;
   yieldFile << "\\middlerule" << std::endl;
-  
+
   for(int k=0; k<int(vprocess.size()); k++)
     {
-      yieldFile << (vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel()).c_str() << std::endl;
+      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << std::endl;
     }
 
   yieldFile << "\\bottomrule" << std::endl;
