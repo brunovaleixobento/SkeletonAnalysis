@@ -13,8 +13,8 @@ using std::string;
 
 class process{
 public:
-  process(TChain* chain, string name=""):fchain(chain),fname(name),Nevt(0),Nexp_nosel(0),Nexp_sel(0),fselection("") 
-  {}
+  process(TChain* chain, string name=""):fchain(chain),fname(name),Nevt(0),Nexp_nosel(0),Nexp_sel(0) 
+  {fselection = "";}
 
   string GetName() {return fname;}
   TChain* GetChain() {return fchain;}
@@ -66,10 +66,11 @@ void countEvt(process &process, string selection="")
   std::cout << Nexp_sel << " expected events after requiring " + selection << std::endl;
 }
 
-void Print(vector<process> vprocess)
+void Print(vector<process> vprocess, string selection)
 {
   ofstream yieldFile;
   yieldFile.open ("yield.txt");
+<<<<<<< HEAD
   yieldFile << "\\documentclass{article}" << std::endl;
   yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
   yieldFile << "\\title{Cms2016}" << std::endl;
@@ -98,8 +99,7 @@ void Print(vector<process> vprocess)
   yieldFile << "\\end{document}" << std::endl;
 }
 
-int printYield()
-{
+int printYield(){
   // Open input file(s) 
   string basedirectory = "~cbeiraod/public/4Students/";
 
@@ -135,6 +135,8 @@ int printYield()
       std::cout << vprocess[j].GetName() + " Events\n" << std::endl;
       countEvt(vprocess[j],cut);
     }
+
+  Print(vprocess,cut);
 
   // Continue...
 
