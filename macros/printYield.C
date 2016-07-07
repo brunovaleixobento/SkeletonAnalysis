@@ -74,7 +74,7 @@ void countEvt(process &process, string selection="")
 void Print(vector<process> vprocess, string selection)
 {
   ofstream yieldFile;
-  yieldFile.open ("yield.txt");
+  yieldFile.open ("yield.tex");
   yieldFile << "\\documentclass{article}" << std::endl;
   yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
   yieldFile << "\\title{Cms2016}" << std::endl;
@@ -106,8 +106,8 @@ void Print(vector<process> vprocess, string selection)
 }
 
 int printYield(){
-  // Open input file(s) 
-  string basedirectory = "~cbeiraod/public/4Students/";
+  // Open input file(s)
+  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/Frozen/";
 
   // Create chains
   TChain* wjetsChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
