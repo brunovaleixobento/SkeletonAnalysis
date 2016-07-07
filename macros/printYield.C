@@ -74,22 +74,22 @@ void countEvt(process &process, string selection="")
 void Print(vector<process> vprocess, string selection)
 {
   ofstream yieldFile;
-  yieldFile.open ("yield.txt");
+  yieldFile.open ("yield.tex");
   yieldFile << "\\documentclass{article}" << std::endl;
   yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
-  yieldFile << "\\title{Cms2016}" << std::endl;
-  yieldFile << "\\author{Bia Bruno}" << std::endl;
+  yieldFile << "\\title{CMS SUMMER 2016}" << std::endl;
+  yieldFile << "\\author{Beatriz Lopes &  Bruno Valeixo Bento}" << std::endl;
   yieldFile << "\\date{July 2016}" << std::endl;
   yieldFile << "\\begin{document}" << std::endl;
   yieldFile << "\\maketitle" << std::endl;
 
-  yieldFile << "\\begin{table}[]" << std::endl;
+  yieldFile << "\\begin{table}[!h]" << std::endl;
   yieldFile << "\\centering" << std::endl;
   yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\begin{tabular}{lll}" << std::endl;
   yieldFile << "\\hline" << std::endl;
  
-  yieldFile << "Process & Total & Yield (" << selection <<  ") \\\\" << std::endl;
+  yieldFile << "Process & Total & Yield ($" << selection <<  "$) \\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
   for(int k=0; k<int(vprocess.size()); k++)
