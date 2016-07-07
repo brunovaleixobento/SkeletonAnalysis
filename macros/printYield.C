@@ -88,6 +88,8 @@ void Print(vector<process> vprocess, string selection)
   yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\begin{tabular}{lll}" << std::endl;
   yieldFile << "\\toprule" << std::endl;
+
+ 
   yieldFile << "Process & Total & Yield (" << selection <<  ") \\\\" << std::endl;
   yieldFile << "\\middlerule" << std::endl;
 
@@ -103,8 +105,7 @@ void Print(vector<process> vprocess, string selection)
   yieldFile << "\\end{document}" << std::endl;
 }
 
-int printYield()
-{
+int printYield(){
   // Open input file(s) 
   string basedirectory = "~cbeiraod/public/4Students/";
 
