@@ -52,32 +52,32 @@ int plotVar()
   vector<variable> vvariable;
 
   variable LepPt("LepPt","LepPt",30,0,200,"p_{T} (l) [GeV]");
-  variable LepEta("LepEta","LepEta",100,-3,3,"#eta (l)");
+  variable LepEta("LepEta","LepEta",30,-3,3,"#eta (l)");
   variable Njet("Njet","Njet",11,-0.5,10.5,"Njet");
-  variable Jet1Pt("Jet1Pt","Jet1Pt",100,0,400,"p_{T} (Jet1) [GeV]");
-  variable Jet1Eta("Jet1Eta","Jet1Eta",100,-3,3,"Eta (Jet1)");
-  variable Met("Met","Met",30,100,300,"Met [GeV]");
+  variable Jet1Pt("Jet1Pt","Jet1Pt",30,0,400,"p_{T} (Jet1) [GeV]");
+  variable Jet1Eta("Jet1Eta","Jet1Eta",30,-3,3,"Eta (Jet1)");
+  variable Met("Met","Met",30,150,500,"Met [GeV]");
   variable CosDPhi("CosDeltaPhi","CosDeltaPhi",30,-1.2,1.2,"Cos(#Delta #Phi)");
   variable DrJet1Lep("DrJet1Lep","DrJet1Lep",30,0,6,"Dr Jet1 Lep");
   variable DrJet2Lep("DrJet2Lep","DrJet2Lep",30,0,6,"Dr Jet2 Lep");
-  variable Jet2Pt("Jet2Pt","Jet2Pt",100,0,400,"p_{T} (Jet2) [GeV]");
-  variable mt("mt","mt",100,0,250,"mt [GeV]");
-  variable HT20("HT20","HT20",100,0,2000,"HT20 [GeV]");
-  variable HT30("HT30","HT30",100,0,2000,"HT30 [GeV]");
+  variable Jet2Pt("Jet2Pt","Jet2Pt",30,0,400,"p_{T} (Jet2) [GeV]");
+  variable mt("mt","mt",30,0,250,"mt [GeV]");
+  variable HT20("HT20","HT20",30,0,2000,"HT20 [GeV]");
+  variable HT30("HT30","HT30",30,0,2000,"HT30 [GeV]");
 
   vvariable.push_back(LepPt);
-  //vvariable.push_back(LepEta);
+  vvariable.push_back(LepEta);
   vvariable.push_back(Njet);
   vvariable.push_back(Jet1Pt);
-  //vvariable.push_back(Jet1Eta);
+  vvariable.push_back(Jet1Eta);
   vvariable.push_back(Met);
-  /*vvariable.push_back(CosDPhi);
+  vvariable.push_back(CosDPhi);
   vvariable.push_back(DrJet1Lep);
   vvariable.push_back(DrJet2Lep);
   vvariable.push_back(Jet2Pt);
   vvariable.push_back(mt);
   vvariable.push_back(HT20);
-  vvariable.push_back(HT30);*/
+  vvariable.push_back(HT30);
 
   // Open input file(s)
   string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/Frozen/";
@@ -149,13 +149,16 @@ int plotVar()
       TCut electron = "(abs(LepID)==11)&&(LepIso03<0.2)";
       TCut emu = muon||electron;
       TCut ISRjet = "Jet1Pt > 110";
-      TCut met = "Met > 160";
-      TCut njets = "Njet > 1";
+      TCut met = "Met > 300";
+      TCut njets = "Njet > 2";
+      //TCut ht30 = "HT30 > 300";
+      //TCut ht20 = "HT20 > 450";
+      TCut mt = "mt < 70";
 
       // Fill histogram(s)
-      ttbarTree->Draw((vvariable[i].GetExpression()+">>"+sttbarH).c_str(),"XS*10000/Nevt"*(emu&&ISRjet&&met&&njets),"goff");
-      wjetsTree->Draw((vvariable[i].GetExpression()+">>"+swjetsH).c_str(),"XS*10000/Nevt"*(emu&&ISRjet&&met&&njets),"goff");
-      stopTree->Draw((vvariable[i].GetExpression()+">>"+sstopH).c_str(),"XS*10000/Nevt*100"*(emu&&ISRjet&&met&&njets),"goff");  //MULTIPLICAR O SINAL
+      ttbarTree->Draw((vvariable[i].GetExpression()+">>"+sttbarH).c_str(),"XS*10000/Nevt"*(emu&&ISRjet&&met&&njets&&mt),"goff");
+      wjetsTree->Draw((vvariable[i].GetExpression()+">>"+swjetsH).c_str(),"XS*10000/Nevt"*(emu&&ISRjet&&met&&njets&&mt),"goff");
+      stopTree->Draw((vvariable[i].GetExpression()+">>"+sstopH).c_str(),"XS*10000/Nevt*100"*(emu&&ISRjet&&met&&njets&&mt),"goff");  //MULTIPLICAR O SINAL
 
       THStack *Stack = new THStack(vvariable[i].GetName().c_str(), (vvariable[i].GetName()+";"+vvariable[i].GetLeg().c_str()+";Evt.").c_str());
       Stack->Add(ttbarH[i]);
@@ -195,3 +198,4 @@ int plotVar()
 
   return 0;
 }
+
