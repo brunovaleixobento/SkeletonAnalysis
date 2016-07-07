@@ -87,18 +87,17 @@ void Print(vector<process> vprocess, string selection)
   yieldFile << "\\centering" << std::endl;
   yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\begin{tabular}{lll}" << std::endl;
-  yieldFile << "\\toprule" << std::endl;
-
+  yieldFile << "\\hline" << std::endl;
  
   yieldFile << "Process & Total & Yield (" << selection <<  ") \\\\" << std::endl;
-  yieldFile << "\\middlerule" << std::endl;
+  yieldFile << "\\hline" << std::endl;
 
   for(int k=0; k<int(vprocess.size()); k++)
     {
-      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << "\\\\"<< std::endl;
+      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << " \\\\" << std::endl;
     }
 
-  yieldFile << "\\bottomrule" << std::endl;
+  yieldFile << "\\hline" << std::endl;
   yieldFile << "\\end{tabular}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
 
