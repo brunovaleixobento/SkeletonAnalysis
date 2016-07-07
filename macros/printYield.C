@@ -77,29 +77,42 @@ void Print(vector<process> vprocess, string selection)
   yieldFile.open ("yield.tex");
   yieldFile << "\\documentclass{article}" << std::endl;
   yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
-  yieldFile << "\\title{Cms2016}" << std::endl;
-  yieldFile << "\\author{Bia Bruno}" << std::endl;
+  yieldFile << "\\title{CMS SUMMER 2016}" << std::endl;
+  yieldFile << "\\author{Beatriz Lopes &  Bruno Valeixo Bento}" << std::endl;
   yieldFile << "\\date{July 2016}" << std::endl;
   yieldFile << "\\begin{document}" << std::endl;
   yieldFile << "\\maketitle" << std::endl;
 
-  yieldFile << "\\begin{table}[]" << std::endl;
+  yieldFile << "\\begin{table}[!h]" << std::endl;
   yieldFile << "\\centering" << std::endl;
-  yieldFile << "\\caption{Tabela}" << std::endl;
   yieldFile << "\\begin{tabular}{lll}" << std::endl;
   yieldFile << "\\hline" << std::endl;
-
  
-  yieldFile << "Process & Total & Yield (" << selection <<  ") \\\\" << std::endl;
+  yieldFile << "Process & Total & Yield ($" << selection <<  "$) \\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
-  for(int k=0; k<int(vprocess.size()); k++)
+  int Nevt_bg_nosel = 0;
+  int Nevt_bg_sel = 0;
+  for(int k=0; k<int(vprocess.size()-1); k++)
     {
       yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << " \\\\" << std::endl;
+      Nevt_bg_nosel += vprocess[k].GetNexp_nosel();
+      Nevt_bg_sel += vprocess[k].GetNexp_sel();
     }
 
+  yieldFile << "Total Background & " << Nevt_bg_nosel << " & " << Nevt_bg_sel << " \\\\" << std::endl;
+
   yieldFile << "\\hline" << std::endl;
+
+  yieldFile << "Signal & " << vprocess[vprocess.size()-1].GetNexp_nosel() << " & " << vprocess[vprocess.size()-1].GetNexp_sel() << " \\\\" << std::endl;
+  
+  yieldFile << "\\hline" << std::endl;
+
+  yieldFile << "Signal + Background & " << vprocess[vprocess.size()-1].GetNexp_nosel()+Nevt_bg_nosel << " & " << vprocess[vprocess.size()-1].GetNexp_sel()+Nevt_bg_sel << " \\\\" << std::endl;
+
+  yieldFile << "\\hline" << std::endl; 
   yieldFile << "\\end{tabular}" << std::endl;
+  yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
 
   yieldFile << "\\end{document}" << std::endl;
