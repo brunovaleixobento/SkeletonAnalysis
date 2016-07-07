@@ -4,6 +4,7 @@
 #include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TCut.h"
 #include "TChain.h"
 #include "TH1D.h"
 #include "string"
@@ -84,30 +85,35 @@ void Print(vector<process> vprocess, string selection)
 
   yieldFile << "\\begin{table}[!h]" << std::endl;
   yieldFile << "\\centering" << std::endl;
-  yieldFile << "\\begin{tabular}{lll}" << std::endl;
+  yieldFile << "\\begin{tabular}{llll}" << std::endl;
   yieldFile << "\\hline" << std::endl;
  
-  yieldFile << "Process & Total & Yield ($" << selection <<  "$) \\\\" << std::endl;
+//  yieldFile << "Process & Total & Yield ($" << selection <<  "$) \\\\" << std::endl;
+  yieldFile << "Process & Total & Yield \\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
   int Nevt_bg_nosel = 0;
   int Nevt_bg_sel = 0;
   for(int k=0; k<int(vprocess.size()-1); k++)
     {
-      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << " \\\\" << std::endl;
+      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << " & " << double(vprocess[k].GetNexp_sel())/double(vprocess[k].GetNexp_nosel()) <<  " \\\\" << std::endl;
       Nevt_bg_nosel += vprocess[k].GetNexp_nosel();
       Nevt_bg_sel += vprocess[k].GetNexp_sel();
     }
 
-  yieldFile << "Total Background & " << Nevt_bg_nosel << " & " << Nevt_bg_sel << " \\\\" << std::endl;
+  yieldFile << "Total Background & " << Nevt_bg_nosel << " & " << Nevt_bg_sel << " & " << double(Nevt_bg_sel)/double(Nevt_bg_nosel) << " \\\\" << std::endl;
 
   yieldFile << "\\hline" << std::endl;
 
-  yieldFile << "Signal & " << vprocess[vprocess.size()-1].GetNexp_nosel() << " & " << vprocess[vprocess.size()-1].GetNexp_sel() << " \\\\" << std::endl;
+  yieldFile << "Signal & " << vprocess[vprocess.size()-1].GetNexp_nosel() << " & " << vprocess[vprocess.size()-1].GetNexp_sel() << " & " << double(vprocess[vprocess.size()-1].GetNexp_sel())/double(vprocess[vprocess.size()-1].GetNexp_nosel()) << " \\\\" << std::endl;
 
   yieldFile << "\\hline" << std::endl;
 
-  yieldFile << "Signal + Background & " << vprocess[vprocess.size()-1].GetNexp_nosel()+Nevt_bg_nosel << " & " << vprocess[vprocess.size()-1].GetNexp_sel()+Nevt_bg_sel << " \\\\" << std::endl;
+  yieldFile << "Signal + Background & " << 
+  vprocess[vprocess.size()-1].GetNexp_nosel()+Nevt_bg_nosel << " & " 
+  << vprocess[vprocess.size()-1].GetNexp_sel()+Nevt_bg_sel 
+  << " & " << double(vprocess[vprocess.size()-1].GetNexp_sel()+Nevt_bg_sel)/double(vprocess[vprocess.size()-1].GetNexp_nosel()+Nevt_bg_nosel)  
+  << " \\\\" << std::endl;
 
   yieldFile << "\\hline" << std::endl;
   yieldFile << "\\end{tabular}" << std::endl;
@@ -144,9 +150,20 @@ int printYield(){
   vprocess.push_back(pttbar);
   vprocess.push_back(psignal);
 
+  //Create TCuts
+  TCut muon = "(abs(LepID)==13)&&(LepIso03<0.2)";
+  TCut electron = "(abs(LepID)==11)&&(LepIso03<0.2)";
+  TCut emu = muon||electron;
+  TCut ISRjet = "Jet1Pt > 110";
+  TCut met = "Met > 160";
+  TCut njets = "Njet > 1";
+  TCut ht30 = "HT30 > 300";
+  TCut ht20 = "HT20 > 450";
+  TCut mt = "mt < 70"; 
+
   // Get yields
 
-  string cut = "Met > 110";
+  string cut = "((abs(LepID)==13)&&(LepIso03<0.2) || (abs(LepID)==11)&&(LepIso03<0.2) && Jet1Pt > 110 && Met > 300 && Njet > 1 && mt < 70)";
 
   for(int j=0; j<int(vprocess.size()); j++)
     {
