@@ -95,7 +95,7 @@ void countEvt(process &process, string selection="")
 int printYield()
 {
   // Open input file(s) 
-  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/Frozen/";
+  string basedirectory = "~cbeiraod/public/4Students/";
 
   // Create chains
   TChain* wjetsChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
