@@ -13,7 +13,7 @@ using std::string;
 
 class process{
 public:
-  process(TChain* chain, string name=""):fchain(chain),fname(name),Nevt(0),Nexp_nosel(0),Nexp_sel(0) 
+  process(TChain* chain, string name=""):fchain(chain),fname(name),Nevt(0),Nexp_nosel(0),Nexp_sel(0)
   {fselection = "";}
 
   string GetName() {return fname;}
@@ -22,8 +22,7 @@ public:
   int GetNexp_nosel() {return Nexp_nosel;}
   int GetNexp_sel() {return Nexp_sel;}
   string GetSelection() {return fselection;}
-  
-  
+
   void SetNevt_nosel(int evt_nosel) {Nexp_nosel = evt_nosel;}
   void SetNevt_sel(int evt_sel) {Nexp_sel = evt_sel;}
   void SetSelection(string selection) {fselection = selection;}
@@ -105,12 +104,12 @@ void Print(vector<process> vprocess, string selection)
   yieldFile << "\\hline" << std::endl;
 
   yieldFile << "Signal & " << vprocess[vprocess.size()-1].GetNexp_nosel() << " & " << vprocess[vprocess.size()-1].GetNexp_sel() << " \\\\" << std::endl;
-  
+
   yieldFile << "\\hline" << std::endl;
 
   yieldFile << "Signal + Background & " << vprocess[vprocess.size()-1].GetNexp_nosel()+Nevt_bg_nosel << " & " << vprocess[vprocess.size()-1].GetNexp_sel()+Nevt_bg_sel << " \\\\" << std::endl;
 
-  yieldFile << "\\hline" << std::endl; 
+  yieldFile << "\\hline" << std::endl;
   yieldFile << "\\end{tabular}" << std::endl;
   yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
@@ -134,7 +133,7 @@ int printYield(){
 
   TChain* stopChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
   stopChain->Add((basedirectory + "T2DegStop_300_270_bdt.root").c_str());
-  
+
   vector<process> vprocess;
 
   process pwjets(wjetsChain,"wjets");
