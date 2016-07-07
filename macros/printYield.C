@@ -70,32 +70,32 @@ void Print(vector<process> vprocess)
 {
   ofstream yieldFile;
   yieldFile.open ("yield.txt");
-  yieldFile << "\documentclass{article}" << std::endl;
-  yieldFile << "\usepackage[utf8]{inputenc}" << std::endl;
-  yieldFile << "\title{Cms2016}" << std::endl;
-  yieldFile << "\author{Bia Bruno}" << std::endl;
-  yieldFile << "\date{July 2016}" << std::endl;
-  yieldFile << "\begin{document}" << std::endl;
-  yieldFile << "\maketitle" << std::endl;
+  yieldFile << "\\documentclass{article}" << std::endl;
+  yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
+  yieldFile << "\\title{Cms2016}" << std::endl;
+  yieldFile << "\\author{Bia Bruno}" << std::endl;
+  yieldFile << "\\date{July 2016}" << std::endl;
+  yieldFile << "\\begin{document}" << std::endl;
+  yieldFile << "\\maketitle" << std::endl;
 
-  yieldFile << "\begin{table}[]" << std::endl;
-  yieldFile << "\centering" << std::endl;
-  yieldFile << "\caption{My caption}" << std::endl;
-  yieldFile << "\begin{tabular}{ll}" << std::endl;
-  yieldFile << "\toprule" << std::endl;
-  yieldFile << "Process & Total & Yield (" + vprocess[k].GetSelection() +  ") \\" << std::endl;
-  yieldFile << "\middlerule" << std::endl;
-
+  yieldFile << "\\begin{table}[]" << std::endl;
+  yieldFile << "\\centering" << std::endl;
+  yieldFile << "\\caption{My caption}" << std::endl;
+  yieldFile << "\\begin{tabular}{ll}" << std::endl;
+  yieldFile << "\\toprule" << std::endl;
+  yieldFile << "Process & Total & Yield (" << vprocess[k].GetSelection() <<  ") \\\\" << std::endl;
+  yieldFile << "\\middlerule" << std::endl;
+  
   for(int k=0; k<int(vprocess.size()); k++)
     {
-      yieldFile << (vprocess[k].GetName() + " & " + vprocess[k].GetNexp_nosel() + " & " + vprocess[k].GetNexp_sel()).c_str() << std::endl;
+      yieldFile << (vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel()).c_str() << std::endl;
     }
 
-  yieldFile << "\bottomrule" << std::endl;
-  yieldFile << "\end{tabular}" << std::endl;
-  yieldFile << "\end{table}" << std::endl;
+  yieldFile << "\\bottomrule" << std::endl;
+  yieldFile << "\\end{tabular}" << std::endl;
+  yieldFile << "\\end{table}" << std::endl;
 
-  yieldFile << "\end{document}" << std::endl;
+  yieldFile << "\\end{document}" << std::endl;
 }
 
 int printYield()
