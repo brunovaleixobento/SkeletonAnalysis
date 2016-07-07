@@ -49,7 +49,7 @@ variable::variable(string name, string expression, int bins, double xmin, double
 int plotVar()
 {
   vector<variable> vvariable;
-  
+
   variable LepPt("LepPt","LepPt",30,0,200,"p_{T} (l) [GeV]");
   variable LepEta("LepEta","LepEta",100,-3,3,"#eta (l)");
   variable Njet("Njet","Njet",11,-0.5,10.5,"Njet");
@@ -64,17 +64,17 @@ int plotVar()
   variable HT20("HT20","HT20",100,0,2000,"HT20 [GeV]");
   variable HT30("HT30","HT30",100,0,2000,"HT30 [GeV]");
 
-  /*vvariable.push_back(LepPt);
+  vvariable.push_back(LepPt);
   vvariable.push_back(LepEta);
   vvariable.push_back(Njet);
   vvariable.push_back(Jet1Pt);
   vvariable.push_back(Jet1Eta);
   vvariable.push_back(Met);
-  vvariable.push_back(CosDPhi);*/
-  //vvariable.push_back(DrJet1Lep);
-  //vvariable.push_back(DrJet2Lep);
-  //vvariable.push_back(Jet2Pt);
-  //vvariable.push_back(mt);
+  vvariable.push_back(CosDPhi);
+  vvariable.push_back(DrJet1Lep);
+  vvariable.push_back(DrJet2Lep);
+  vvariable.push_back(Jet2Pt);
+  vvariable.push_back(mt);
   vvariable.push_back(HT20);
   vvariable.push_back(HT30);
 
@@ -85,11 +85,11 @@ int plotVar()
 
   TFile* stopFile = new TFile((basedirectory + "T2DegStop_300_270_bdt.root").c_str(), "READ");
 
-  TChain wjetsTree("bdttree"); //creates a chain to process a Tree called "bdttree"
-  wjetsTree.Add((basedirectory + "Wjets100to200_bdt.root").c_str());
-  wjetsTree.Add((basedirectory + "Wjets200to400_bdt.root").c_str());
-  wjetsTree.Add((basedirectory + "Wjets400to600_bdt.root").c_str());
-  wjetsTree.Add((basedirectory + "Wjets600toInf_bdt.root").c_str());
+  TChain* wjetsTree = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
+  wjetsTree->Add((basedirectory + "Wjets100to200_bdt.root").c_str());
+  wjetsTree->Add((basedirectory + "Wjets200to400_bdt.root").c_str());
+  wjetsTree->Add((basedirectory + "Wjets400to600_bdt.root").c_str());
+  wjetsTree->Add((basedirectory + "Wjets600toInf_bdt.root").c_str());
 
   // Get ttree(s) from input file(s)
   TTree* ttbarTree = static_cast<TTree*>(ttbarFile->Get("bdttree"));
@@ -114,55 +114,54 @@ int plotVar()
     }
 
   // Plots
-  for(int i=0;i<vvariable.size();i++)
+  for(int i=0;i<int(vvariable.size());i++)
     {
       // Create histogram(s)
       TH1D* ttbarH= new TH1D("ttbarH", "ttbar", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax());
       TH1D* wjetsH = new TH1D("wjetsH", "wjets", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax());
       TH1D* stopH = new TH1D("stopH", "Signal*100", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax());
-      
+
       ttbarH->SetFillColor(kGreen);
       ttbarH->SetLineColor(kGreen);
-      
+
       wjetsH->SetFillColor(kBlue);
       wjetsH->SetLineColor(kBlue);
 
       stopH->SetLineColor(kRed);
-      
-      if(vvariable.size()!=1)
+
+       if(vvariable.size()!=1)
 	c1->cd(i+1);
       else
 	c1->cd();
 
       // Fill histogram(s)
       ttbarTree->Draw((vvariable[i].GetExpression()+">>ttbarH").c_str(),"XS*10000/Nevt","goff");
-      wjetsTree.Draw((vvariable[i].GetExpression()+">>wjetsH").c_str(),"XS*10000/Nevt","goff");
+      wjetsTree->Draw((vvariable[i].GetExpression()+">>wjetsH").c_str(),"XS*10000/Nevt","goff");
       stopTree->Draw((vvariable[i].GetExpression()+">>stopH").c_str(),"XS*10000/Nevt*100","goff");  //MULTIPLICAR O SINAL
 
 
       THStack *Stack = new THStack(vvariable[i].GetName().c_str(), (vvariable[i].GetName()+";"+vvariable[i].GetLeg().c_str()+";Evt.").c_str());
       Stack->Add(ttbarH);
       Stack->Add(wjetsH);
-      
+
       // Draw plots
       Stack->Draw("HIST");
       stopH->Draw("HIST same");
 
       if(Stack->GetMaximum() > stopH->GetMaximum())
 	{
-	  Stack->SetMaximum(Stack->GetMaximum()*1.05);
-	}
+	  Stack->SetMaximum(Stack->GetMaximum()*1.05);	}
       else
 	{
 	  Stack->SetMaximum(stopH->GetMaximum()*1.05);
 	}
-      
+
       TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
-      
+
       c2->cd();
       Stack->Draw("HIST goff");
       stopH->Draw("HIST same goff");
- 
+
       TLegend * legenda2 = c2->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
       // Save individual plots as .pdf and .C
