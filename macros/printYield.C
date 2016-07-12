@@ -1,5 +1,6 @@
+
 #include <iostream>
-#include <fstream> 
+#include <fstream>
 
 #include "TROOT.h"
 #include "TFile.h"
@@ -32,12 +33,23 @@ private:
   TChain* fchain;
   string fname;
   string fselection;
-  int Nevt;
   int Nexp_nosel;
   int Nexp_sel;
 };
 
-void countEvt(process &process, string selection="")
+int countTotal(process &process)
+{
+    // Create temporary histogram
+  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
+
+  int Nexp_nosel = 0;
+  process.GetChain()->Draw("Njet>>tmp", "XS*10000/Nevt", "goff");
+  Nexp_nosel = int(tmp->Integral());
+
+    process.SetNevt_nosel(Nexp_nosel);
+}
+
+int countEvt(process &process, TCut cut)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
@@ -50,28 +62,21 @@ void countEvt(process &process, string selection="")
     vprocess[i].GetvTree()->SetBranchAddress("XS", &XS);
     vprocess[i].GetvTree()->GetEntry(0);*/
 
-  double Nexp_nosel = 0.0;
-  // Get number of events from TTree
-  // In principle the `GetEntries()` method from the TTree, however, for a more general result
-  //it is sometimes better to do this way:
-  // Get yield
-  process.GetChain()->Draw("Njet>>tmp", "XS*10000/Nevt", "goff");
-  Nexp_nosel = tmp->Integral();
-
   // Get number of events after a cut
   double Nexp_sel = 0.0;
-  process.GetChain()->Draw("Njet>>tmp", ("XS*10000/Nevt*(" + selection + ")").c_str(), "goff");
+  process.GetChain()->Draw("Njet>>tmp","XS*10000/Nevt"*cut, "goff");
   Nexp_sel = tmp->Integral();
 
-  process.SetSelection(selection);
-  process.SetNevt_nosel(Nexp_nosel);
+  process.SetSelection(cut.GetName());
   process.SetNevt_sel(Nexp_sel);
 
-  std::cout << Nexp_nosel << " expected events without selection" << std::endl;
-  std::cout << Nexp_sel << " expected events after requiring " + selection << std::endl;
+  //std::cout << Nexp_nosel << " expected events without selection" << std::endl;
+  //std::cout << Nexp_sel << " expected events after requiring stuff" << std::endl;
+
+  return Nexp_sel;
 }
 
-void Print(vector<process> vprocess, string selection)
+void Print(vector<process> vprocess, vector<TCut> vcut, double** matrix)
 {
   ofstream yieldFile;
   yieldFile.open ("yield.tex");
@@ -85,23 +90,37 @@ void Print(vector<process> vprocess, string selection)
 
   yieldFile << "\\begin{table}[!h]" << std::endl;
   yieldFile << "\\centering" << std::endl;
-  yieldFile << "\\begin{tabular}{llll}" << std::endl;
-  yieldFile << "\\hline" << std::endl;
- 
-//  yieldFile << "Process & Total & Yield ($" << selection <<  "$) \\\\" << std::endl;
-  yieldFile << "Process & Total & Yield \\\\" << std::endl;
+
+  string col = "ll";
+  string l1 = "Process & No cut";
+
+  for(int i=0;i<int(vcut.size());i++)
+    {
+     col+= "l";
+     l1+= "& ";
+     l1+= vcut[i].GetName();
+    }
+
+  yieldFile << "\\begin{tabular}{" << col << "}" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
-  int Nevt_bg_nosel = 0;
-  int Nevt_bg_sel = 0;
+  yieldFile << l1 << "\\\\" << std::endl;
+  yieldFile << "\\hline" << std::endl;
+
+
   for(int k=0; k<int(vprocess.size()-1); k++)
     {
-      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel() << " & " << vprocess[k].GetNexp_sel() << " & " << double(vprocess[k].GetNexp_sel())/double(vprocess[k].GetNexp_nosel()) <<  " \\\\" << std::endl;
+      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel();
+      for(int j=0;j<int(vcut.size());j++)
+       yieldFile << "& " << vprocess[k].GetNexp_sel();
+
+       yieldFile << " \\\\" << std::endl;
+
       Nevt_bg_nosel += vprocess[k].GetNexp_nosel();
       Nevt_bg_sel += vprocess[k].GetNexp_sel();
     }
 
-  yieldFile << "Total Background & " << Nevt_bg_nosel << " & " << Nevt_bg_sel << " & " << double(Nevt_bg_sel)/double(Nevt_bg_nosel) << " \\\\" << std::endl;
+  yieldFile << "Total Background & " << Nevt_bg_nosel << " & " << Nevt_bg_sel << " \\\\" << std::endl;
 
   yieldFile << "\\hline" << std::endl;
 
@@ -109,12 +128,8 @@ void Print(vector<process> vprocess, string selection)
 
   yieldFile << "\\hline" << std::endl;
 
-  yieldFile << "Signal + Background & " << 
-  vprocess[vprocess.size()-1].GetNexp_nosel()+Nevt_bg_nosel << " & " 
-  << vprocess[vprocess.size()-1].GetNexp_sel()+Nevt_bg_sel 
-  << " & " << double(vprocess[vprocess.size()-1].GetNexp_sel()+Nevt_bg_sel)/double(vprocess[vprocess.size()-1].GetNexp_nosel()+Nevt_bg_nosel)  
-  << " \\\\" << std::endl;
-
+  yieldFile << "Signal + Background & & & & &" << std::endl;
+  
   yieldFile << "\\hline" << std::endl;
   yieldFile << "\\end{tabular}" << std::endl;
   yieldFile << "\\caption{Yields}" << std::endl;
@@ -156,22 +171,46 @@ int printYield(){
   TCut emu = muon||electron;
   TCut ISRjet = "Jet1Pt > 110";
   TCut met = "Met > 160";
-  TCut njets = "Njet > 1";
-  TCut ht30 = "HT30 > 300";
-  TCut ht20 = "HT20 > 450";
-  TCut mt = "mt < 70"; 
 
-  // Get yields
+  //Set names of TCuts
+  emu.SetName("emu");
+  ISRjet.SetName("ISRjet");
+  met.SetName("Met");
 
-  string cut = "((abs(LepID)==13)&&(LepIso03<0.2) || (abs(LepID)==11)&&(LepIso03<0.2) && Jet1Pt > 110 && Met > 300 && Njet > 1 && mt < 70)";
+  // Create VCut
+  vector<TCut> vcut;
+  vcut.push_back(emu);
+  vcut.push_back(ISRjet);
+  vcut.push_back(met);
 
-  for(int j=0; j<int(vprocess.size()); j++)
+  //Create matrix
+  double matrix[vprocess.size()+2][vcut.size()];
+
+  for(int i=0;i<int(vprocess.size());i++)
+  {matrix[i][0]=countTotal(vprocess[i]);}
+
+  for(int i=0; i<int(vprocess.size()); i++)
     {
-      std::cout << vprocess[j].GetName() + " Events\n" << std::endl;
-      countEvt(vprocess[j],cut);
+    for(int j=1;j<int(vcut.size()+1);j++)
+     {
+      matrix[i][j]=countEvt(vprocess[i],vcut[j]);
+      std::cout << "\n" << matrix[i][j] << " ";
+     }
     }
 
-  Print(vprocess,cut);
+  for(int j=0;j<int(vcut.size());j++)
+    {
+    matrix[vprocess.size()][j]=0;
+    matrix[vprocess.size()+1][j]=0;
+    for(int i=0;i<int(vprocess.size()-1);i++)
+      {
+      matrix[vprocess.size()][j]+=matrix[i][j];
+      matrix[vprocess.size()+1][j]+=matrix[vprocess.size()][j]+matrix[vprocess.size()-1][j];
+      std::cout << matrix[vprocess.size()][j] << "   " << matrix[vprocess.size()+1][j] << std::endl;
+      }
+    }
+
+  Print(vprocess,vcut,matrix);
 
   // Continue...
 
