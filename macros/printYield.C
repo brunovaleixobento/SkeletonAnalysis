@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <fstream>
 
@@ -33,66 +32,95 @@ private:
   TChain* fchain;
   string fname;
   string fselection;
+  int Nevt;
   int Nexp_nosel;
   int Nexp_sel;
 };
 
+//// Monte Carlo
+
 int countTotal(process &process)
-{
-    // Create temporary histogram
-  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
-
-  int Nexp_nosel = 0;
-  process.GetChain()->Draw("Njet>>tmp", "XS*10000/Nevt", "goff");
-  Nexp_nosel = int(tmp->Integral());
-
-    process.SetNevt_nosel(Nexp_nosel);
-}
-
-int countEvt(process &process, TCut cut)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
-  // Get the total initial number of events from the ttree
-  /*int Nevt = 0;
-    vprocess[i].GetvTree()->SetBranchAddress("Nevt", &Nevt);
-    float XS = 0;
-    double L = 10000;
-    vprocess[i].GetvTree()->SetBranchAddress("XS", &XS);
-    vprocess[i].GetvTree()->GetEntry(0);*/
+  int Total = 0;
+  process.GetChain()->Draw("Njet>>tmp", "XS*5000/Nevt", "goff");
+  Total = int(tmp->Integral());
 
-  // Get number of events after a cut
-  double Nexp_sel = 0.0;
-  process.GetChain()->Draw("Njet>>tmp","XS*10000/Nevt"*cut, "goff");
-  Nexp_sel = tmp->Integral();
-
-  process.SetSelection(cut.GetName());
-  process.SetNevt_sel(Nexp_sel);
-
-  //std::cout << Nexp_nosel << " expected events without selection" << std::endl;
-  //std::cout << Nexp_sel << " expected events after requiring stuff" << std::endl;
-
-  return Nexp_sel;
+  delete tmp;
+  process.SetNevt_nosel(Total);
+  return Total;
 }
 
-void Print(vector<process> vprocess, vector<TCut> vcut, double** matrix)
+int countEvt(process &process, TCut Cut)
+{
+  // Create temporary histogram
+  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
+
+  // Get number of events after a cut
+  int Sel = 0;
+  process.GetChain()->Draw("Njet>>tmp","XS*5000/Nevt"*Cut, "goff");
+  Sel = tmp->Integral();
+
+  delete tmp;
+  process.SetSelection(Cut.GetName());
+  process.SetNevt_sel(Sel);
+  return Sel;
+}
+
+//// Data
+
+int countDataTotal(TChain* chain)
+{
+  // Create temporary histogram
+  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
+
+  // Get number of events after a cut
+  int Total = 0;
+  chain->Draw("Njet>>tmp","", "goff");
+  Total = tmp->Integral();
+
+  delete tmp;
+  return Total;
+}
+
+int countDataEvt(TChain* chain, TCut Cut)
+{
+  // Create temporary histogram
+  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
+
+  // Get number of events after a cut
+  int Evt = 0;
+  chain->Draw("Njet>>tmp",Cut, "goff");
+  Evt = tmp->Integral();
+
+  delete tmp;
+  return Evt;
+}
+
+
+void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix)
 {
   ofstream yieldFile;
+
+  // Begin document
   yieldFile.open ("yield.tex");
   yieldFile << "\\documentclass{article}" << std::endl;
-  yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
+//  yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
+  yieldFile << "\\usepackage{cancel}" << std::endl;
   yieldFile << "\\title{CMS SUMMER 2016}" << std::endl;
   yieldFile << "\\author{Beatriz Lopes &  Bruno Valeixo Bento}" << std::endl;
   yieldFile << "\\date{July 2016}" << std::endl;
   yieldFile << "\\begin{document}" << std::endl;
   yieldFile << "\\maketitle" << std::endl;
 
+  // Create table
   yieldFile << "\\begin{table}[!h]" << std::endl;
   yieldFile << "\\centering" << std::endl;
 
   string col = "ll";
-  string l1 = "Process & No cut";
+  string l1 = "Process & Total";
 
   for(int i=0;i<int(vcut.size());i++)
     {
@@ -107,53 +135,85 @@ void Print(vector<process> vprocess, vector<TCut> vcut, double** matrix)
   yieldFile << l1 << "\\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
-
-  for(int k=0; k<int(vprocess.size()-1); k++)
+  // Background
+  for(int i=0; i<int(vprocess.size()-1); i++)
+  {
+    string line = vprocess[i].GetName();
+    for(int j=0; j<int(vcut.size()+1); j++)
     {
-      yieldFile << vprocess[k].GetName() << " & " << vprocess[k].GetNexp_nosel();
-      for(int j=0;j<int(vcut.size());j++)
-       yieldFile << "& " << vprocess[k].GetNexp_sel();
-
-       yieldFile << " \\\\" << std::endl;
-
-      Nevt_bg_nosel += vprocess[k].GetNexp_nosel();
-      Nevt_bg_sel += vprocess[k].GetNexp_sel();
+      line += " & " + to_string(matrix[i][j]);
     }
+    line += " \\\\";
+    yieldFile << line << std::endl;
+  }
 
-  yieldFile << "Total Background & " << Nevt_bg_nosel << " & " << Nevt_bg_sel << " \\\\" << std::endl;
-
+  string lineTB = "Total Background";
+  for(int j=0; j<int(vcut.size()+1); j++)
+  {
+    lineTB += " & " + to_string(matrix[vprocess.size()][j]);
+  }
+  lineTB += " \\\\";
+  yieldFile << lineTB << std::endl;
   yieldFile << "\\hline" << std::endl;
 
-  yieldFile << "Signal & " << vprocess[vprocess.size()-1].GetNexp_nosel() << " & " << vprocess[vprocess.size()-1].GetNexp_sel() << " & " << double(vprocess[vprocess.size()-1].GetNexp_sel())/double(vprocess[vprocess.size()-1].GetNexp_nosel()) << " \\\\" << std::endl;
-
+  // Signal
+  string lineS = "Signal";
+  for(int j=0; j<int(vcut.size()+1); j++)
+  {
+    lineS += " & " + to_string(matrix[vprocess.size()-1][j]);
+  }
+  lineS += " \\\\";
+  yieldFile << lineS << std::endl;
   yieldFile << "\\hline" << std::endl;
 
-  yieldFile << "Signal + Background & & & & &" << std::endl;
-  
+  // Signal + Background
+  string lineT = "Signal + Background";
+  for(int j=0; j<int(vcut.size()+1); j++)
+  {
+    lineT += " & " + to_string(matrix[vprocess.size()+1][j]);
+  }
+  lineT += " \\\\";
+  yieldFile << lineT << std::endl;
   yieldFile << "\\hline" << std::endl;
+  yieldFile << "\\hline" << std::endl;
+
+  // Data
+  string lineD = "Data";
+  for(int j=0; j<int(vcut.size()+1); j++)
+  {
+    lineD += " & " + to_string(matrix[vprocess.size()+2][j]);
+  }
+  lineD += " \\\\";
+  yieldFile << lineD << std::endl;
+  yieldFile << "\\hline" << std::endl;
+
+
+  // End document
   yieldFile << "\\end{tabular}" << std::endl;
   yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
-
   yieldFile << "\\end{document}" << std::endl;
 }
 
 int printYield(){
   // Open input file(s)
-  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/Frozen/";
+  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/nTuples_v2016-07-12/";
 
   // Create chains
   TChain* wjetsChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
-  wjetsChain->Add((basedirectory + "Wjets100to200_bdt.root").c_str());
-  wjetsChain->Add((basedirectory + "Wjets200to400_bdt.root").c_str());
-  wjetsChain->Add((basedirectory + "Wjets400to600_bdt.root").c_str());
-  wjetsChain->Add((basedirectory + "Wjets600toInf_bdt.root").c_str());
+  wjetsChain->Add((basedirectory + "Wjets_100to200_bdt.root").c_str());
+  wjetsChain->Add((basedirectory + "Wjets_200to400_bdt.root").c_str());
+  wjetsChain->Add((basedirectory + "Wjets_400to600_bdt.root").c_str());
+  wjetsChain->Add((basedirectory + "Wjets_600toInf_bdt.root").c_str());
 
   TChain* ttbarChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
   ttbarChain->Add((basedirectory + "TTJets_LO_bdt.root").c_str());
 
   TChain* stopChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
   stopChain->Add((basedirectory + "T2DegStop_300_270_bdt.root").c_str());
+
+  TChain* dataChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
+  dataChain->Add((basedirectory + "PseudoData_bdt.root").c_str());
 
   vector<process> vprocess;
 
@@ -170,49 +230,56 @@ int printYield(){
   TCut electron = "(abs(LepID)==11)&&(LepIso03<0.2)";
   TCut emu = muon||electron;
   TCut ISRjet = "Jet1Pt > 110";
-  TCut met = "Met > 160";
+  TCut met = "Met > 300";
 
   //Set names of TCuts
   emu.SetName("emu");
-  ISRjet.SetName("ISRjet");
-  met.SetName("Met");
+  ISRjet.SetName("$p_T$(Jet1)$ > 110$");
+  met.SetName("$\\cancel{E_T} > 300$");
+  electron.SetName("electron");
 
   // Create VCut
   vector<TCut> vcut;
   vcut.push_back(emu);
-  vcut.push_back(ISRjet);
-  vcut.push_back(met);
+  vcut.push_back(ISRjet*emu);
+  vcut.push_back(met*ISRjet*emu);
 
-  //Create matrix
-  double matrix[vprocess.size()+2][vcut.size()];
+  // Create matrix
+  int** matrix = new int*[vprocess.size()+3];
+  for(int i=0; i<int(vprocess.size()+3); i++)
+    matrix[i] = new int[vcut.size()+1];
 
+  // Total
   for(int i=0;i<int(vprocess.size());i++)
-  {matrix[i][0]=countTotal(vprocess[i]);}
+    matrix[i][0]=countTotal(vprocess[i]);
 
+  // Processes
   for(int i=0; i<int(vprocess.size()); i++)
     {
-    for(int j=1;j<int(vcut.size()+1);j++)
-     {
-      matrix[i][j]=countEvt(vprocess[i],vcut[j]);
-      std::cout << "\n" << matrix[i][j] << " ";
-     }
+      for(int j=0;j<int(vcut.size());j++)
+        matrix[i][j+1] = countEvt(vprocess[i],vcut[j]);
     }
 
-  for(int j=0;j<int(vcut.size());j++)
+  // Total Background & Signal + Background
+  for(int j=0;j<int(vcut.size()+1);j++)
     {
-    matrix[vprocess.size()][j]=0;
-    matrix[vprocess.size()+1][j]=0;
-    for(int i=0;i<int(vprocess.size()-1);i++)
-      {
-      matrix[vprocess.size()][j]+=matrix[i][j];
-      matrix[vprocess.size()+1][j]+=matrix[vprocess.size()][j]+matrix[vprocess.size()-1][j];
-      std::cout << matrix[vprocess.size()][j] << "   " << matrix[vprocess.size()+1][j] << std::endl;
-      }
+      matrix[vprocess.size()][j] = 0;
+      matrix[vprocess.size()+1][j] = 0;
+      for(int i=0; i<int(vprocess.size()-1); i++)
+          matrix[vprocess.size()][j] += matrix[i][j];
+
+      matrix[vprocess.size()+1][j] += matrix[vprocess.size()][j] + matrix[vprocess.size()-1][j];
     }
 
-  Print(vprocess,vcut,matrix);
+  // Data
+  matrix[vprocess.size()+2][0] = countDataTotal(dataChain);
+  for(int j=0; j<int(vcut.size()); j++)
+    {
+      matrix[vprocess.size()+2][j+1] = countDataEvt(dataChain, vcut[j]);
+    }
 
-  // Continue...
+  // Print
+  Print(vprocess,vcut,matrix);
 
   return 0;
 }
