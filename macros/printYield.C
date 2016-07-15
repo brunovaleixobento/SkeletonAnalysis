@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 #include "TROOT.h"
 #include "TFile.h"
@@ -69,6 +70,40 @@ int countEvt(process &process, TCut Cut)
   return Sel;
 }
 
+// ERROR
+
+int countError(TChain* chain, TCut cut)
+{
+  // Create temporary histogram
+  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
+
+  int Error = 0;
+  tmp->Sumw2();
+  chain->Draw("Njet>>tmp", "XS*5000/Nevt"*cut, "goff");
+
+  for(int i=0; i<=(tmp->GetNbinsX()+1); i++)
+    Error += tmp->GetBinError(i);
+
+  delete tmp;
+  return Error;
+}
+
+int countDataError(TChain* chain, TCut cut)
+{
+  // Create temporary histogram
+  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
+
+  int DataError = 0;
+  tmp->Sumw2();
+  chain->Draw("Njet>>tmp", cut, "goff");
+
+  for(int i=0; i<=(tmp->GetNbinsX()+1); i++)
+    DataError += tmp->GetBinError(i);
+
+  delete tmp;
+  return DataError;
+}
+
 //// Data
 
 int countDataTotal(TChain* chain)
@@ -100,7 +135,7 @@ int countDataEvt(TChain* chain, TCut Cut)
 }
 
 
-void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix)
+void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matrixError)
 {
   ofstream yieldFile;
 
@@ -141,7 +176,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix)
     string line = vprocess[i].GetName();
     for(int j=0; j<int(vcut.size()+1); j++)
     {
-      line += " & " + to_string(matrix[i][j]);
+      line += " & " + to_string(matrix[i][j]) + " $\\pm$ " + to_string(matrixError[i][j]);
     }
     line += " \\\\";
     yieldFile << line << std::endl;
@@ -150,7 +185,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix)
   string lineTB = "Total Background";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineTB += " & " + to_string(matrix[vprocess.size()][j]);
+    lineTB += " & " + to_string(matrix[vprocess.size()][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()][j]);
   }
   lineTB += " \\\\";
   yieldFile << lineTB << std::endl;
@@ -160,7 +195,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix)
   string lineS = "Signal";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineS += " & " + to_string(matrix[vprocess.size()-1][j]);
+    lineS += " & " + to_string(matrix[vprocess.size()-1][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()-1][j]);;
   }
   lineS += " \\\\";
   yieldFile << lineS << std::endl;
@@ -170,7 +205,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix)
   string lineT = "Signal + Background";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineT += " & " + to_string(matrix[vprocess.size()+1][j]);
+    lineT += " & " + to_string(matrix[vprocess.size()+1][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()+1][j]);
   }
   lineT += " \\\\";
   yieldFile << lineT << std::endl;
@@ -181,7 +216,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix)
   string lineD = "Data";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineD += " & " + to_string(matrix[vprocess.size()+2][j]);
+    lineD += " & " + to_string(matrix[vprocess.size()+2][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()+2][j]);
   }
   lineD += " \\\\";
   yieldFile << lineD << std::endl;
@@ -226,6 +261,7 @@ int printYield(){
   vprocess.push_back(psignal);
 
   //Create TCuts
+  TCut null = "1";
   TCut muon = "(abs(LepID)==13)&&(LepIso03<0.2)";
   TCut electron = "(abs(LepID)==11)&&(LepIso03<0.2)";
   TCut emu = muon||electron;
@@ -249,37 +285,64 @@ int printYield(){
   for(int i=0; i<int(vprocess.size()+3); i++)
     matrix[i] = new int[vcut.size()+1];
 
+  int** matrixError = new int*[vprocess.size()+3];
+  for(int i=0; i<int(vprocess.size()+3); i++)
+    matrixError[i] = new int[vcut.size()+1];
+
   // Total
   for(int i=0;i<int(vprocess.size());i++)
-    matrix[i][0]=countTotal(vprocess[i]);
+    {
+      matrix[i][0] = countTotal(vprocess[i]);
+      matrixError[i][0] = countError(vprocess[i].GetChain(), null);
+    }
 
   // Processes
   for(int i=0; i<int(vprocess.size()); i++)
     {
       for(int j=0;j<int(vcut.size());j++)
+      {
         matrix[i][j+1] = countEvt(vprocess[i],vcut[j]);
+        matrixError[i][j+1] = countError(vprocess[i].GetChain(),vcut[j]);
+      }
     }
 
   // Total Background & Signal + Background
-  for(int j=0;j<int(vcut.size()+1);j++)
+  for(int j=0; j<int(vcut.size()+1); j++)
     {
       matrix[vprocess.size()][j] = 0;
       matrix[vprocess.size()+1][j] = 0;
-      for(int i=0; i<int(vprocess.size()-1); i++)
-          matrix[vprocess.size()][j] += matrix[i][j];
 
-      matrix[vprocess.size()+1][j] += matrix[vprocess.size()][j] + matrix[vprocess.size()-1][j];
+      matrixError[vprocess.size()][j] = 0;
+      matrixError[vprocess.size()+1][j] = 0;
+
+      double tmp=0;
+
+      for(int i=0; i<int(vprocess.size()-1); i++)
+      {
+        matrix[vprocess.size()][j] += matrix[i][j];
+        tmp += matrixError[i][j]*matrixError[i][j];
+      }
+
+      matrixError[vprocess.size()][j] = sqrt(tmp);
+
+      double tmp1 = matrixError[vprocess.size()][j];
+      double tmp2 = matrixError[vprocess.size()-1][j];
+
+      matrix[vprocess.size()+1][j] = matrix[vprocess.size()][j] + matrix[vprocess.size()-1][j];
+      matrixError[vprocess.size()+1][j] = sqrt(tmp1*tmp1 + tmp2*tmp2);
     }
 
   // Data
   matrix[vprocess.size()+2][0] = countDataTotal(dataChain);
+  matrixError[vprocess.size()+2][0] = countDataError(dataChain, null);
   for(int j=0; j<int(vcut.size()); j++)
     {
       matrix[vprocess.size()+2][j+1] = countDataEvt(dataChain, vcut[j]);
+      matrixError[vprocess.size()+2][j+1] = countDataError(dataChain, vcut[j]);
     }
 
   // Print
-  Print(vprocess,vcut,matrix);
+  Print(vprocess,vcut,matrix,matrixError);
 
   return 0;
 }
