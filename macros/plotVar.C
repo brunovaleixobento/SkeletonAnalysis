@@ -56,7 +56,7 @@ int plotVar()
 {
   vector<variable> vvariable;
 
-  variable LepPt("LepPt","LepPt",30,0,200,"p_{T} (l) [GeV]",0);
+  variable LepPt("LepPt","LepPt",50,0,50,"p_{T} (l) [GeV]",0);
   variable LepEta("LepEta","LepEta",30,-3,3,"#eta (l)",0);
   variable Njet("Njet","Njet",11,-0.5,10.5,"Njet",0);
   variable Jet1Pt("Jet1Pt","Jet1Pt",30,100,500,"p_{T} (Jet1) [GeV]",0);
@@ -70,9 +70,9 @@ int plotVar()
   variable HT20("HT20","HT20",30,0,2000,"HT20 [GeV]",0);
   variable HT30("HT30","HT30",30,0,2000,"HT30 [GeV]");
 
-  //vvariable.push_back(LepPt);
+  vvariable.push_back(LepPt);
   //vvariable.push_back(LepEta);
-  //vvariable.push_back(Njet);
+  vvariable.push_back(Njet);
   //vvariable.push_back(Jet1Pt);
   //vvariable.push_back(Jet1Eta);
   vvariable.push_back(Met);
@@ -131,6 +131,9 @@ int plotVar()
     vector<TH1D*> ratioH;
     vector<TH1D*> emptyH;
 
+    double xlow1, xup1, ylow1, yup1;
+    double xlow2, xup2, ylow2, yup2;
+
   // Plots
   for(int i=0;i<int(vvariable.size());i++)
     {
@@ -140,7 +143,7 @@ int plotVar()
       string sdataH = "dataH"+std::to_string(i);
       string sbackgroundH = "backgroundH"+std::to_string(i);
       string sratioH = "ratioH"+std::to_string(i);
-//      string semptyH = "empty"+std::to_string(i);
+      //string semptyH = "empty"+std::to_string(i);
 
       // Create histogram(s)
       ttbarH.push_back(new TH1D(sttbarH.c_str(), "ttbar", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
@@ -149,7 +152,7 @@ int plotVar()
       dataH.push_back(new TH1D(sdataH.c_str(), "Data", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
       backgroundH.push_back(new TH1D(sbackgroundH.c_str(), "", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
       ratioH.push_back(new TH1D(sratioH.c_str(), "", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-//      emptyH.push_back(new TH1D(semptyH.c_str(),"",vvariable[i].GetBins(),vvariable[i].GetXMin(), vvariable[i].GetXMax()));
+      //emptyH.push_back(new TH1D(semptyH.c_str(),"",vvariable[i].GetBins(),vvariable[i].GetXMin(), vvariable[i].GetXMax()));
 
       ttbarH[i]->SetFillColor(kGreen-7);
       ttbarH[i]->SetLineColor(kGreen-7);
@@ -161,6 +164,12 @@ int plotVar()
       stopH[i]->SetLineColor(kRed);
 
       dataH[i]->SetLineColor(kBlack);
+      dataH[i]->Sumw2();
+
+      backgroundH[i]->SetMaximum(ratioH[i]->GetMaximum()*1.1);
+      backgroundH[i]->SetMinimum(ratioH[i]->GetMinimum()*0.9);
+
+      TLine *line1 = new TLine(vvariable[i].GetXMin(),1,vvariable[i].GetXMax(),1);
 
       if(vvariable.size()!=1)
 	      c1->cd(i+1);
@@ -169,21 +178,15 @@ int plotVar()
 
       // Divide Pads in Canvas c1
 
-      double xlow, xup, ylow, yup;
-      gPad->GetPadPar(xlow, ylow, xup, yup);
+      xup1 = 0.99;
+      yup1 = 0.99;
+      xlow1 = 0.01;
+      ylow1 = 0.2;
 
-      double xlow1, xup1, ylow1, yup1;
-      double xlow2, xup2, ylow2, yup2;
-
-      xup1 = xup;
-      yup1 = yup;
-      xlow1 = xlow;
-      ylow1 = 0.2*yup;
-
-      xup2 = xup;
+      xup2 = 0.99;
       yup2 = ylow1;
-      xlow2 = xlow;
-      ylow2 = ylow+0.05*(yup-ylow);
+      xlow2 = 0.01;
+      ylow2 = 0.01;
 
       gPad->Divide(1,2);
       gPad->cd(2);
@@ -232,11 +235,9 @@ int plotVar()
 
       TGraphErrors *gError = new TGraphErrors(backgroundH[i]);
 
+      // Draw plots
       gStyle->SetOptStat(0);
 
-      dataH[i]->Sumw2();
-
-      // Draw plots
       Stack->Draw("HIST");
       stopH[i]->Draw("HIST same");
       dataH[i]->Draw("E same");
@@ -257,25 +258,18 @@ int plotVar()
       else
 	      c1->cd();
 
-
-      backgroundH[i]->SetMaximum(ratioH[i]->GetMaximum()*1.1);
-      backgroundH[i]->SetMinimum(ratioH[i]->GetMinimum()*0.9);
-
-      TLine *line1 = new TLine(vvariable[i].GetXMin(),1,vvariable[i].GetXMax(),1);
-
-
       gPad->cd(2);
-      //emptyH[i]->Draw();
       backgroundH[i]->Draw();
       gError->Draw("3");
 
       ratioH[i]->Draw("E same");
 
       line1->Draw("same");
-      //gError->Draw("a4 same");
       gError->SetFillColor(6);
       gError->SetFillStyle(3144);
-      gError->GetYaxis()->SetNdivisions(10);
+      backgroundH[i]->GetYaxis()->SetNdivisions(5);
+      backgroundH[i]->GetYaxis()->SetRangeUser(0.5,1.5);
+      backgroundH[i]->GetYaxis()->SetTickSize(0.01);
       backgroundH[i]->GetYaxis()->SetLabelSize(0.15);
       backgroundH[i]->GetXaxis()->SetLabelSize(0.15);
       backgroundH[i]->GetYaxis()->SetTitle("Data/ #Sigma MC");
@@ -287,13 +281,14 @@ int plotVar()
       // Divide Canvas c2
 
       c2->cd();
+
       gPad->Divide(1,2);
       gPad->cd(2);
-      gPad->SetPad(xlow2,ylow2,xup2,yup2);
+      gPad->SetPad(xlow2, ylow2, xup2, yup2);
 
       c2->cd();
       gPad->cd(1);
-      gPad->SetPad(xlow1,ylow1,xup1,yup1);
+      gPad->SetPad(xlow1, ylow1, xup1, yup1);
 
       // Draw in Canvas c2 - Pad1
 
@@ -320,16 +315,15 @@ int plotVar()
       ratioH[i]->Draw("E same");
 
       line1->Draw("same");
-      //gError->Draw("a4 same");
       gError->SetFillColor(6);
       gError->SetFillStyle(3144);
-      gError->GetYaxis()->SetNdivisions(10);
+      backgroundH[i]->GetYaxis()->SetTickSize(0.01);
+      backgroundH[i]->GetYaxis()->SetNdivisions(5);
       backgroundH[i]->GetYaxis()->SetLabelSize(0.15);
       backgroundH[i]->GetXaxis()->SetLabelSize(0.15);
       backgroundH[i]->GetYaxis()->SetTitleSize(0.15);
       backgroundH[i]->GetYaxis()->SetTitleOffset(0.15);
       gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
-
 
       // Save individual plots as .pdf and .C
       c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
