@@ -155,7 +155,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matr
   yieldFile << "\\centering" << std::endl;
 
   string col = "ll";
-  string l1 = "Process & Total";
+  string l1 = "Process & No cut";
 
   for(int i=0;i<int(vcut.size());i++)
     {
@@ -270,26 +270,30 @@ int printYield(){
   TCut emu = muon||electron;
   TCut ISRjet = "Jet1Pt > 110";
   TCut met = "Met > 300";
+  TCut newmet = "Met < 570";
   TCut njets = "Njet > 2";
   TCut lepPt = "LepPt < 17";
-  TCut jethbpt = "JetHBpt < 75";
+  TCut mt = "mt < 135";
+  TCut preSel = met && emu && ISRjet;
 
   //Set names of TCuts
   emu.SetName("emu");
   ISRjet.SetName("$p_T$(Jet1)$ > 110$");
-  met.SetName("$\\cancel{E_T} > 300$");
+  newmet.SetName("$\\cancel{E_T} < 570$");
   electron.SetName("electron");
   njets.SetName("$Njet > 2$");
   lepPt.SetName("$p_{T} (Lep) < 17$");
-  jethbpt.SetName("$p_{T}$ (JetHB)");
+  mt.SetName("$m_{T} < 135$");
+  preSel.SetName("PreSelection");
 
   // Create VCut
   vector<TCut> vcut;
   //vcut.push_back(emu);
   //vcut.push_back(ISRjet*emu);
-  vcut.push_back(met*ISRjet*emu);
-  vcut.push_back(jethbpt*met*ISRjet*emu);
-  vcut.push_back(lepPt*met*ISRjet*emu);
+  //vcut.push_back(met*ISRjet*emu);
+  vcut.push_back(preSel);
+  vcut.push_back(newmet*preSel);
+  vcut.push_back(mt*preSel);
 
   // Create matrix
   int** matrix = new int*[vprocess.size()+3];

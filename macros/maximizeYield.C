@@ -324,7 +324,7 @@ int maximizeYield(){
   vcut.push_back(jethbpt*met*ISRjet*emu);
   vcut.push_back(lepPt*met*ISRjet*emu);
 
-  int a = YieldMaximize(vprocess,Met);
+  int a = YieldMaximize(vprocess,mt);
 
   // Print
 //  Print(vprocess,vcut,matrix,matrixError);
