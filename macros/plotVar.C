@@ -241,8 +241,12 @@ int plotVar()
 
       for(int j=0; j< backgroundH[i]->GetNbinsX()+1; j++)
       {
-        backgroundH[i]->SetBinError(j, backgroundH[i]->GetBinError(j)/backgroundH[i]->GetBinContent(j));
+        if(backgroundH[i]->GetBinContent(j)<1e-8)
+          backgroundH[i]->SetBinError(j,0);
+        else
+          backgroundH[i]->SetBinError(j, backgroundH[i]->GetBinError(j)/backgroundH[i]->GetBinContent(j));
         backgroundH[i]->SetBinContent(j,1);
+        std::cout << backgroundH[i]->GetBinContent(j) << "  " << backgroundH[i]->GetBinError(j) << std::endl;
       }
 
       TGraphErrors *gError = new TGraphErrors(backgroundH[i]);
@@ -277,7 +281,7 @@ int plotVar()
       ratioH[i]->Draw("E same");
 
       line1->Draw("same");
-      gError->SetFillColor(kGray);
+      gError->SetFillColor(kOrange+7);
       gError->SetFillStyle(3144);
       backgroundH[i]->GetYaxis()->SetNdivisions(5);
       backgroundH[i]->GetYaxis()->SetRangeUser(0.5,1.5);
@@ -327,7 +331,7 @@ int plotVar()
       ratioH[i]->Draw("E same");
 
       line1->Draw("same");
-      gError->SetFillColor(kGray);
+      gError->SetFillColor(kOrange+7);
       gError->SetFillStyle(3144);
       backgroundH[i]->GetYaxis()->SetTickSize(0.01);
       backgroundH[i]->GetYaxis()->SetNdivisions(5);
@@ -338,9 +342,8 @@ int plotVar()
       gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
 
       // Save individual plots as .pdf and .C
-      c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
+      //c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
       c2->SaveAs(("plots/"+vvariable[i].GetName()+".C").c_str());
-      c2->SaveAs(("plots/"+vvariable[i].GetName()+".png").c_str());
 
       delete c2;
     }
