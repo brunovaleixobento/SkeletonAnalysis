@@ -56,27 +56,27 @@ int plotVar()
 {
   vector<variable> vvariable;
 
-  variable LepPt("LepPt","LepPt",25,0,35,"p_{T} (l) [GeV]");
-  variable LepEta("LepEta","LepEta",30,-3,3,"#eta (l)");
+  variable LepPt("LepPt","LepPt",20,0,35,"p_{T} (l) [GeV]");
+  variable LepEta("LepEta","LepEta",20,-3,3,"#eta (l)");
   variable Njet("Njet","Njet",11,-0.5,10.5,"Njet");
-  variable Jet1Pt("Jet1Pt","Jet1Pt",30,300,500,"p_{T} (Jet1) [GeV]");
-  variable Jet1Eta("Jet1Eta","Jet1Eta",30,-3,3,"Eta (Jet1)");
-  variable Met("Met","Met",30,300,600,"Met [GeV]");
-  variable CosDPhi("CosDeltaPhi","CosDeltaPhi",30,-1.2,1.2,"Cos(#Delta #Phi)");
-  variable DrJet1Lep("DrJet1Lep","DrJet1Lep",30,0,6,"Dr Jet1 Lep");
-  variable DrJet2Lep("DrJet2Lep","DrJet2Lep",30,0,6,"Dr Jet2 Lep");
-  variable Jet2Pt("Jet2Pt","Jet2Pt",30,0,400,"p_{T} (Jet2) [GeV]",1);
-  variable mt("mt","mt",30,0,150,"mt [GeV]");
-  variable HT20("HT20","HT20",30,0,1400,"HT20 [GeV]");
-  variable HT30("HT30","HT30",30,0,1400,"HT30 [GeV]");
-  variable JetLepMass("JetLepMass","JetLepMass",50,0,250,"M_{Jet+Lep}");
-  variable JetHBPt("JetHBpt","JetHBpt",50,0,700,"p_{T} (JetHB)");
+  variable Jet1Pt("Jet1Pt","Jet1Pt",20,300,500,"p_{T} (Jet1) [GeV]");
+  variable Jet1Eta("Jet1Eta","Jet1Eta",20,-3,3,"Eta (Jet1)");
+  variable Met("Met","Met",20,300,600,"Met [GeV]");
+  variable CosDPhi("CosDeltaPhi","CosDeltaPhi",20,-1.2,1.2,"Cos(#Delta #Phi)");
+  variable DrJet1Lep("DrJet1Lep","DrJet1Lep",20,0,6,"Dr Jet1 Lep");
+  variable DrJet2Lep("DrJet2Lep","DrJet2Lep",20,0,6,"Dr Jet2 Lep");
+  variable Jet2Pt("Jet2Pt","Jet2Pt",20,0,400,"p_{T} (Jet2) [GeV]",1);
+  variable mt("mt","mt",20,0,150,"mt [GeV]");
+  variable HT20("HT20","HT20",20,0,1400,"HT20 [GeV]");
+  variable HT30("HT30","HT30",20,0,1400,"HT30 [GeV]");
+  variable JetLepMass("JetLepMass","JetLepMass",20,0,250,"M_{Jet+Lep}");
+  variable JetHBPt("JetHBpt","JetHBpt",20,0,200,"p_{T} (JetHB)");
 
   variable mtHT30("mtHT30","HT30 - mt*5",30,0,1400,"HT30 - 5 \\times m_{T}");
 
   vvariable.push_back(LepPt);
-  vvariable.push_back(LepEta);
-  vvariable.push_back(Njet);
+//  vvariable.push_back(LepEta);
+//  vvariable.push_back(Njet);
   vvariable.push_back(Jet1Pt);
 //  vvariable.push_back(Jet2Pt);
 //  vvariable.push_back(Jet1Eta);
@@ -88,8 +88,8 @@ int plotVar()
 //  vvariable.push_back(HT20);
 //  vvariable.push_back(HT30);
 //  vvariable.push_back(mtHT30);
-//  vvariable.push_back(JetLepMass);
-//  vvariable.push_back(JetHBPt);
+  vvariable.push_back(JetLepMass);
+  vvariable.push_back(JetHBPt);
 
   // Open input file(s)
   string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/nTuples_v2016-07-12/";
@@ -174,8 +174,8 @@ int plotVar()
       dataH[i]->SetLineColor(kBlack);
       dataH[i]->Sumw2();
 
-      backgroundH[i]->SetMaximum(ratioH[i]->GetMaximum()*1.1);
-      backgroundH[i]->SetMinimum(ratioH[i]->GetMinimum()*0.9);
+      backgroundH[i]->SetMaximum(ratioH[i]->GetMaximum()*1.5);
+      backgroundH[i]->SetMinimum(ratioH[i]->GetMinimum()*0.5);
 
       TLine *line1 = new TLine(vvariable[i].GetXMin(),1,vvariable[i].GetXMax(),1);
 
@@ -246,7 +246,6 @@ int plotVar()
         else
           backgroundH[i]->SetBinError(j, backgroundH[i]->GetBinError(j)/backgroundH[i]->GetBinContent(j));
         backgroundH[i]->SetBinContent(j,1);
-        std::cout << backgroundH[i]->GetBinContent(j) << "  " << backgroundH[i]->GetBinError(j) << std::endl;
       }
 
       TGraphErrors *gError = new TGraphErrors(backgroundH[i]);
@@ -258,13 +257,17 @@ int plotVar()
       stopH[i]->Draw("HIST same");
       dataH[i]->Draw("E same");
 
-      if(Stack->GetMaximum() > stopH[i]->GetMaximum())
+      if(Stack->GetMaximum() > stopH[i]->GetMaximum() && Stack->GetMaximum() > dataH[i]->GetMaximum())
 	      {
 	        Stack->SetMaximum(Stack->GetMaximum()*1.05);
 	    	}
-      else
+      else if(stopH[i]->GetMaximum() > dataH[i]->GetMaximum())
 	      {
 	        Stack->SetMaximum(stopH[i]->GetMaximum()*1.05);
+	      }
+	    else 
+	      {
+	        Stack->SetMaximum(dataH[i]->GetMaximum()*1.05);
 	      }
 
       TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
@@ -292,7 +295,6 @@ int plotVar()
       backgroundH[i]->GetYaxis()->SetTitleSize(0.15);
       backgroundH[i]->GetYaxis()->SetTitleOffset(0.15);
       gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
-
 
       // Divide Canvas c2
 
