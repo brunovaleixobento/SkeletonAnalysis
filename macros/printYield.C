@@ -228,6 +228,9 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matr
   yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
   yieldFile << "\\end{document}" << std::endl;
+  
+  system("pdflatex yield.tex");
+  system("gnome-open yield.pdf");
 }
 
 int printYield(){
@@ -267,18 +270,26 @@ int printYield(){
   TCut emu = muon||electron;
   TCut ISRjet = "Jet1Pt > 110";
   TCut met = "Met > 300";
+  TCut njets = "Njet > 2";
+  TCut lepPt = "LepPt < 17";
+  TCut jethbpt = "JetHBpt < 75";
 
   //Set names of TCuts
   emu.SetName("emu");
   ISRjet.SetName("$p_T$(Jet1)$ > 110$");
   met.SetName("$\\cancel{E_T} > 300$");
   electron.SetName("electron");
+  njets.SetName("$Njet > 2$");
+  lepPt.SetName("$p_{T} (Lep) < 17$");
+  jethbpt.SetName("$p_{T}$ (JetHB)");
 
   // Create VCut
   vector<TCut> vcut;
-  vcut.push_back(emu);
-  vcut.push_back(ISRjet*emu);
+  //vcut.push_back(emu);
+  //vcut.push_back(ISRjet*emu);
   vcut.push_back(met*ISRjet*emu);
+  vcut.push_back(jethbpt*met*ISRjet*emu);
+  vcut.push_back(lepPt*met*ISRjet*emu);
 
   // Create matrix
   int** matrix = new int*[vprocess.size()+3];
