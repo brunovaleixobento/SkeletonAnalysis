@@ -59,37 +59,38 @@ int plotVar()
   variable LepPt("LepPt","LepPt",20,0,35,"p_{T} (l) [GeV]");
   variable LepEta("LepEta","LepEta",20,-3,3,"#eta (l)");
   variable Njet("Njet","Njet",11,-0.5,10.5,"Njet");
-  variable Jet1Pt("Jet1Pt","Jet1Pt",20,300,500,"p_{T} (Jet1) [GeV]");
+  variable Jet1Pt("Jet1Pt","Jet1Pt",20,100,500,"p_{T} (Jet1) [GeV]");
   variable Jet1Eta("Jet1Eta","Jet1Eta",20,-3,3,"Eta (Jet1)");
   variable Met("Met","Met",20,300,600,"Met [GeV]");
   variable CosDPhi("CosDeltaPhi","CosDeltaPhi",20,-1.2,1.2,"Cos(#Delta #Phi)");
   variable DrJet1Lep("DrJet1Lep","DrJet1Lep",20,0,6,"Dr Jet1 Lep");
   variable DrJet2Lep("DrJet2Lep","DrJet2Lep",20,0,6,"Dr Jet2 Lep");
-  variable Jet2Pt("Jet2Pt","Jet2Pt",20,0,400,"p_{T} (Jet2) [GeV]",1);
+  variable Jet2Pt("Jet2Pt","Jet2Pt",20,0,500,"p_{T} (Jet2) [GeV]",1);
   variable mt("mt","mt",20,0,150,"mt [GeV]");
   variable HT20("HT20","HT20",20,0,1400,"HT20 [GeV]");
   variable HT30("HT30","HT30",20,0,1400,"HT30 [GeV]");
+  variable Q80("Q80","Q80",20,-2,1,"Q80 [GeV]");
   variable JetLepMass("JetLepMass","JetLepMass",20,0,250,"M_{Jet+Lep}");
-  variable JetHBPt("JetHBpt","JetHBpt",20,0,200,"p_{T} (JetHB)");
+  variable JetHBPt("JetHBpt","JetHBpt",20,0,500,"p_{T} (JetHB)");
 
   variable mtHT30("mtHT30","HT30 - mt*5",30,0,1400,"HT30 - 5 \\times m_{T}");
 
   vvariable.push_back(LepPt);
 //  vvariable.push_back(LepEta);
-//  vvariable.push_back(Njet);
+  vvariable.push_back(Njet);
   vvariable.push_back(Jet1Pt);
-//  vvariable.push_back(Jet2Pt);
+  vvariable.push_back(Jet2Pt);
 //  vvariable.push_back(Jet1Eta);
   vvariable.push_back(Met);
-//  vvariable.push_back(CosDPhi);
-//  vvariable.push_back(DrJet1Lep);
-//  vvariable.push_back(DrJet2Lep);
+  vvariable.push_back(CosDPhi);
+  vvariable.push_back(DrJet1Lep);
+  vvariable.push_back(DrJet2Lep);
   vvariable.push_back(mt);
-//  vvariable.push_back(HT20);
+  vvariable.push_back(HT20);
+  vvariable.push_back(Q80);
 //  vvariable.push_back(HT30);
-//  vvariable.push_back(mtHT30);
-  vvariable.push_back(JetLepMass);
-  vvariable.push_back(JetHBPt);
+//  vvariable.push_back(JetLepMass);
+//  vvariable.push_back(JetHBPt);
 
   // Open input file(s)
   string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/nTuples_v2016-07-12/";
@@ -212,16 +213,17 @@ int plotVar()
       TCut muon = "(abs(LepID)==13)&&(LepIso03<0.2)";
       TCut electron = "(abs(LepID)==11)&&(LepIso03<0.2)";
       TCut emu = muon||electron;
-      TCut ISRjet = "Jet1Pt > 300";
+      TCut ISRjet = "Jet1Pt > 110";
       TCut met = "Met > 300";
-      TCut njets = "Njet > 1";
+      TCut jetLepMass = "JetLepMass < 100";
+      //TCut njets = "Njet > 1";
       TCut lepPt = "LepPt < 17";
       //TCut ht30 = "HT30 > 300";
       //TCut ht20 = "HT20 > 450";
-      TCut mt = "mt < 70";
-      TCut jethbpt = "JetHBpt < 100";
+      //TCut mt = "mt < 70";
+      TCut jethbpt = "JetHBpt < 80";
 
-      TCut selection = emu && ISRjet && met && njets && lepPt && jethbpt;
+      TCut selection = emu && ISRjet && met && jetLepMass && jethbpt && lepPt;
 
       // Fill histogram(s) signal & BACKGROUND & DATA
       ttbarTree->Draw((vvariable[i].GetExpression()+">>"+sttbarH).c_str(),"XS*5000/Nevt"*(selection),"goff");
@@ -293,7 +295,7 @@ int plotVar()
       backgroundH[i]->GetXaxis()->SetLabelSize(0.15);
       backgroundH[i]->GetYaxis()->SetTitle("Data/ #Sigma MC");
       backgroundH[i]->GetYaxis()->SetTitleSize(0.15);
-      backgroundH[i]->GetYaxis()->SetTitleOffset(0.15);
+      backgroundH[i]->GetYaxis()->SetTitleOffset(0.35);
       gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
 
       // Divide Canvas c2
@@ -340,11 +342,11 @@ int plotVar()
       backgroundH[i]->GetYaxis()->SetLabelSize(0.15);
       backgroundH[i]->GetXaxis()->SetLabelSize(0.15);
       backgroundH[i]->GetYaxis()->SetTitleSize(0.15);
-      backgroundH[i]->GetYaxis()->SetTitleOffset(0.3);
+      backgroundH[i]->GetYaxis()->SetTitleOffset(0.35);
       gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
 
       // Save individual plots as .pdf and .C
-      //c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
+      c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
       c2->SaveAs(("plots/"+vvariable[i].GetName()+".C").c_str());
 
       delete c2;

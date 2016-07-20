@@ -1,6 +1,8 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cmath>
+#include <sstream>
 
 #include "TROOT.h"
 #include "TFile.h"
@@ -12,6 +14,14 @@
 #include "vector"
 
 using std::string;
+
+
+string to_string_with_precision(double a_value, int n = 3)
+  {
+    std::ostringstream out;
+    out << std::setprecision(n) << a_value;
+    return out.str();
+  }
 
 class variable{
 
@@ -168,47 +178,86 @@ int countDataEvt(TChain* chain, TCut Cut)
   return Evt;
 }
 
-int YieldMaximize(vector<process> vprocess, variable variable)
+void YieldMaximize(vector<process> vprocess, variable variable, ofstream &yieldFile)
 {
   int max = variable.GetXMin();
-  int intervals = 10;
+  int intervals = variable.GetBins();
   double step = (variable.GetXMax() - variable.GetXMin())/intervals;
   TCut bestCut = "1";
+  TCut bestCutL = "1";
+  TCut bestCutR = "1";
 
   int BG = 0;
   int signal = 0;
+
   double ratio = 0;
+  double ratioR = 0;
+  double ratioL = 0;
+
+  double ratio_Error = 0;
+  double ratioR_Error = 0;
+  double ratioL_Error = 0;
+
+  double f = 0.2;
   double tmp = 0;
+
   for(int i=0; i<intervals; i++)
     {
-      for(int j=0; j<i; j++)
-      {
-        TCut cut = (variable.GetName() + ">" + std::to_string(variable.GetXMin() + j*step) + " && " + variable.GetName() + "<" + std::to_string(variable.GetXMin() + i*step)).c_str();
-        cut.SetName((std::to_string(variable.GetXMin() + j*step) + "<" + variable.GetName() + "<" + std::to_string(variable.GetXMin() + i*step)).c_str());
+        TCut cut = (variable.GetExpression() + "<" + std::to_string(variable.GetXMin() + i*step)).c_str();
+        cut.SetName((variable.GetExpression() + " $<$ " + to_string_with_precision(variable.GetXMin() + i*step, 3)).c_str());
 
         BG = countEvt(vprocess[0],cut) + countEvt(vprocess[1],cut);
         signal = countEvt(vprocess[2],cut);
-        tmp = signal/sqrt(BG);
+        tmp = signal/sqrt(BG+f*f*BG*BG);
 
-        if(tmp > ratio)
+        if(tmp > ratioL)
         	{
-	          ratio = tmp;
-	          bestCut = cut;
+	          ratioL = tmp;
+	          bestCutL = cut;
+	          ratioL_Error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+	          ratioL_Error = sqrt(abs(ratioL_Error));
         	}
-      }
     }
-  std::cout << ratio << std::endl;
-  std::cout << bestCut.GetName() << std::endl;
-  return 0;
+
+  for(int i=0; i<intervals; i++)
+    {
+        TCut cut = (variable.GetExpression() + ">" + std::to_string(variable.GetXMin() + i*step)).c_str();
+        cut.SetName((variable.GetExpression() + " $>$ " + to_string_with_precision(variable.GetXMin() + i*step, 3)).c_str());
+
+        BG = countEvt(vprocess[0],cut) + countEvt(vprocess[1],cut);
+        signal = countEvt(vprocess[2],cut);
+        tmp = signal/sqrt(BG+0.2*0.2*BG*BG);
+
+        if(tmp > ratioR)
+        	{
+	          ratioR = tmp;
+	          bestCutR = cut;
+	          ratioR_Error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+	          ratioR_Error = sqrt(abs(ratioR_Error));
+        	}
+    }
+
+  if(ratioR > ratioL)
+    {
+      bestCut = bestCutR;
+      ratio = ratioR;
+      ratio_Error = ratioR_Error;
+    }
+  else
+    {
+      bestCut = bestCutL;
+      ratio = ratioL;
+      ratio_Error = ratioL_Error;
+    }
+
+
+  yieldFile << variable.GetName() << " & " << bestCut.GetName() << " & " << std::setprecision(3) << ratio << " $\\pm$ " << std::setprecision(3) << abs(ratio_Error) << "\\\\" << std::endl;
 }
 
 
-void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matrixError)
+void StartPrint(vector<process> vprocess, ofstream &yieldFile)
 {
-  ofstream yieldFile;
-
-  // Begin document
-  yieldFile.open ("yield.tex");
+  yieldFile.open ("BestCuts.tex");
   yieldFile << "\\documentclass{article}" << std::endl;
 //  yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
   yieldFile << "\\usepackage{cancel}" << std::endl;
@@ -222,20 +271,18 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matr
   yieldFile << "\\begin{table}[!h]" << std::endl;
   yieldFile << "\\centering" << std::endl;
 
-  string col = "ll";
-  string l1 = "Process & Total";
-
-  for(int i=0;i<int(vcut.size());i++)
-    {
-     col+= "l";
-     l1+= "& ";
-     l1+= vcut[i].GetName();
-    }
+  string col = "lll";
+  string l1 = "Variable & Cut & FOM";
 
   yieldFile << "\\begin{tabular}{" << col << "}" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
   yieldFile << l1 << "\\\\" << std::endl;
+  yieldFile << "\\hline" << std::endl;
+}
+
+void EndPrint(ofstream &yieldFile)
+{
   yieldFile << "\\hline" << std::endl;
 
   // End document
@@ -243,9 +290,9 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matr
   yieldFile << "\\caption{Yields}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
   yieldFile << "\\end{document}" << std::endl;
-  
-  system("pdflatex yield.tex");
-  system("gnome-open yield.pdf");
+
+  system("pdflatex BestCuts.tex");
+  system("gnome-open BestCuts.pdf");
 }
 
 int maximizeYield(){
@@ -280,21 +327,36 @@ int maximizeYield(){
 
   // Create Variables
 
-  variable LepPt("LepPt","LepPt",20,0,35,"p_{T} (l) [GeV]");
+  vector<variable> vvariable;
+
+  variable LepPt("$p_{T}$ (Lep)","LepPt",20,0,35,"p_{T} (l) [GeV]");
   variable LepEta("LepEta","LepEta",20,-3,3,"#eta (l)");
   variable Njet("Njet","Njet",11,-0.5,10.5,"Njet");
-  variable Jet1Pt("Jet1Pt","Jet1Pt",20,300,500,"p_{T} (Jet1) [GeV]");
+  variable Jet1Pt("$p_{T}$ (Jet1)","Jet1Pt",20,300,500,"p_{T} (Jet1) [GeV]");
   variable Jet1Eta("Jet1Eta","Jet1Eta",20,-3,3,"Eta (Jet1)");
-  variable Met("Met","Met",20,300,600,"Met [GeV]");
-  variable CosDPhi("CosDeltaPhi","CosDeltaPhi",20,-1.2,1.2,"Cos(#Delta #Phi)");
-  variable DrJet1Lep("DrJet1Lep","DrJet1Lep",20,0,6,"Dr Jet1 Lep");
-  variable DrJet2Lep("DrJet2Lep","DrJet2Lep",20,0,6,"Dr Jet2 Lep");
-  variable Jet2Pt("Jet2Pt","Jet2Pt",20,0,400,"p_{T} (Jet2) [GeV]",1);
-  variable mt("mt","mt",20,0,150,"mt [GeV]");
-  variable HT20("HT20","HT20",20,0,1400,"HT20 [GeV]");
+  variable Met("$\\cancel{E_T}$","Met",20,300,600,"Met [GeV]");
+  variable CosDPhi("$\\cos(\\Delta\\phi)$","CosDeltaPhi",20,-1.2,1.2,"Cos(#Delta #Phi)");
+  variable DrJet1Lep("$\\Delta R$ (Jet1Lep)","DrJet1Lep",10,0,6,"Dr Jet1 Lep");
+  variable DrJet2Lep("$\\Delta R$ (Jet2Lep)","DrJet2Lep",10,0,6,"Dr Jet2 Lep");
+  variable Jet2Pt("$p_{T}$ (Jet2)","Jet2Pt",20,0,400,"p_{T} (Jet2) [GeV]",1);
+  variable mt("$m_T$","mt",20,0,150,"mt [GeV]");
+  variable HT20("$H_{T}$ (20)","HT20",20,0,1400,"HT20 [GeV]");
   variable HT30("HT30","HT30",20,0,1400,"HT30 [GeV]");
   variable JetLepMass("JetLepMass","JetLepMass",20,0,250,"M_{Jet+Lep}");
-  variable JetHBPt("JetHBpt","JetHBpt",20,0,200,"p_{T} (JetHB)");
+  variable JetHBPt("$p_{T}$ (JetHB)","JetHBpt",20,0,200,"p_{T} (JetHB)");
+  variable Q80("Q80","Q80",20,-2,1,"Q80 [GeV]");
+
+  vvariable.push_back(LepPt);
+  vvariable.push_back(Jet1Pt);
+  vvariable.push_back(Jet2Pt);
+  vvariable.push_back(JetHBPt);
+  vvariable.push_back(HT20);
+  vvariable.push_back(Met);
+  vvariable.push_back(mt);
+  vvariable.push_back(Q80);
+  vvariable.push_back(DrJet1Lep);
+  vvariable.push_back(DrJet2Lep);
+  vvariable.push_back(CosDPhi);
 
   // Create TCuts
   TCut null = "1";
@@ -303,31 +365,23 @@ int maximizeYield(){
   TCut emu = muon||electron;
   TCut ISRjet = "Jet1Pt > 110";
   TCut met = "Met > 300";
-  TCut njets = "Njet > 2";
-  TCut lepPt = "LepPt < 17";
-  TCut jethbpt = "JetHBpt < 75";
 
   //Set names of TCuts
   emu.SetName("emu");
   ISRjet.SetName("$p_T$(Jet1)$ > 110$");
   met.SetName("$\\cancel{E_T} > 300$");
-  electron.SetName("electron");
-  njets.SetName("$Njet > 2$");
-  lepPt.SetName("$p_{T} (Lep) < 17$");
-  jethbpt.SetName("$p_{T}$ (JetHB)");
 
   // Create VCut
   vector<TCut> vcut;
-  //vcut.push_back(emu);
-  //vcut.push_back(ISRjet*emu);
   vcut.push_back(met*ISRjet*emu);
-  vcut.push_back(jethbpt*met*ISRjet*emu);
-  vcut.push_back(lepPt*met*ISRjet*emu);
 
-  int a = YieldMaximize(vprocess,mt);
+  // Maximize
 
-  // Print
-//  Print(vprocess,vcut,matrix,matrixError);
+  ofstream BestCuts;
+  StartPrint(vprocess, BestCuts);
+  for(int i=0; i<int(vvariable.size()); i++)
+    YieldMaximize(vprocess, vvariable[i], BestCuts);
+  EndPrint(BestCuts);
 
   return 0;
 }
