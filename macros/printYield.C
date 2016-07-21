@@ -270,21 +270,35 @@ int printYield(){
   TCut emu = muon||electron;
   TCut ISRjet = "Jet1Pt > 110";
   TCut met = "Met > 300";
-  TCut newmet = "Met < 570";
   TCut njets = "Njet > 2";
   TCut lepPt = "LepPt < 17";
-  TCut mt = "mt < 135";
+//  TCut mt = "mt < 135";
   TCut preSel = met && emu && ISRjet;
+
+  TCut cosDPhi = "CosDeltaPhi <0.96";
+  TCut ht20 = "HT20 > 800";
+  TCut jet1Pt = "Jet1Pt > 550";
+  TCut jet2Pt = "Jet2Pt > 220";
+  TCut jetHBPt = "JetHBpt > 550";
+  TCut metFOM = "Met > 540";
+  TCut mt = "mt > 150";
+
+  TCut selection = preSel && metFOM && ht20;
+
+  TCut Met540 = "Met>540";
+  TCut mt100 = "mt > 100";
+  TCut jet1Pt550 = "Jet1Pt > 550";
+
 
   //Set names of TCuts
   emu.SetName("emu");
   ISRjet.SetName("$p_T$(Jet1)$ > 110$");
-  newmet.SetName("$\\cancel{E_T} < 570$");
   electron.SetName("electron");
   njets.SetName("$Njet > 2$");
   lepPt.SetName("$p_{T} (Lep) < 17$");
   mt.SetName("$m_{T} < 135$");
   preSel.SetName("PreSelection");
+  selection.SetName("Selection FOM");
 
   // Create VCut
   vector<TCut> vcut;
@@ -292,8 +306,13 @@ int printYield(){
   //vcut.push_back(ISRjet*emu);
   //vcut.push_back(met*ISRjet*emu);
   vcut.push_back(preSel);
-  vcut.push_back(newmet*preSel);
-  vcut.push_back(mt*preSel);
+  vcut.push_back(Met540*preSel);
+  vcut.push_back(mt100*Met540*preSel);
+  vcut.push_back(jet1Pt550*mt100*Met540*preSel);
+
+  vcut[1].SetName("Met $>$ 540");
+  vcut[2].SetName("mt $>$ 100");
+  vcut[3].SetName("jet1Pt $>$ 550");
 
   // Create matrix
   int** matrix = new int*[vprocess.size()+3];
