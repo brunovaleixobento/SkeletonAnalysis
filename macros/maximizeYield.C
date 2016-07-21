@@ -10,6 +10,8 @@
 #include "TCut.h"
 #include "TChain.h"
 #include "TH1D.h"
+#include "TCanvas.h"
+#include "TGraphErrors.h"
 #include "string"
 #include "vector"
 
@@ -178,7 +180,7 @@ int countDataEvt(TChain* chain, TCut Cut)
   return Evt;
 }
 
-void YieldMaximize(vector<process> vprocess, variable variable, ofstream &yieldFile)
+void YieldMaximize(vector<process> vprocess, variable variable, ofstream &yieldFile, double* &xpointsR, double* &ypointsR, double* &errorR, double* xpointsL, double* &ypointsL, double* &errorL)
 {
   int max = variable.GetXMin();
   int intervals = variable.GetBins();
@@ -210,12 +212,24 @@ void YieldMaximize(vector<process> vprocess, variable variable, ofstream &yieldF
         signal = countEvt(vprocess[2],cut);
         tmp = signal/sqrt(BG+f*f*BG*BG);
 
+        double tmp_error = 0;
+        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+        tmp_error = sqrt(abs(tmp_error));
+
+        xpointsL[i] = variable.GetXMin() + i*step;
+
+        if(BG != 0)
+            ypointsL[i] = tmp;
+        else
+            ypointsL[i] = 0;
+
+        errorL[i] = tmp_error;
+
         if(tmp > ratioL)
         	{
 	          ratioL = tmp;
 	          bestCutL = cut;
-	          ratioL_Error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
-	          ratioL_Error = sqrt(abs(ratioL_Error));
+	          ratioL_Error = tmp_error;
         	}
     }
 
@@ -228,12 +242,24 @@ void YieldMaximize(vector<process> vprocess, variable variable, ofstream &yieldF
         signal = countEvt(vprocess[2],cut);
         tmp = signal/sqrt(BG+0.2*0.2*BG*BG);
 
+        double tmp_error = 0;
+        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+        tmp_error = sqrt(abs(tmp_error));
+
+        xpointsR[i] = variable.GetXMin() + i*step;
+
+        if(BG != 0)
+            ypointsR[i] = tmp;
+        else
+            ypointsR[i] = 0;
+
+        errorR[i] = tmp_error;
+
         if(tmp > ratioR)
         	{
 	          ratioR = tmp;
 	          bestCutR = cut;
-	          ratioR_Error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
-	          ratioR_Error = sqrt(abs(ratioR_Error));
+            ratioR_Error = tmp_error;
         	}
     }
 
@@ -332,19 +358,19 @@ int maximizeYield(){
   variable LepPt("$p_{T}$ (Lep)","LepPt",20,0,35,"p_{T} (l) [GeV]");
   variable LepEta("LepEta","LepEta",20,-3,3,"#eta (l)");
   variable Njet("Njet","Njet",11,-0.5,10.5,"Njet");
-  variable Jet1Pt("$p_{T}$ (Jet1)","Jet1Pt",20,300,500,"p_{T} (Jet1) [GeV]");
+  variable Jet1Pt("$p_{T} (Jet1)$","Jet1Pt",20,300,1000,"p_{T} (Jet1) [GeV]");
   variable Jet1Eta("Jet1Eta","Jet1Eta",20,-3,3,"Eta (Jet1)");
-  variable Met("$\\cancel{E_T}$","Met",20,300,600,"Met [GeV]");
+  variable Met("$\\cancel{E_T}$","Met",20,300, 1000,"Met [GeV]");
   variable CosDPhi("$\\cos(\\Delta\\phi)$","CosDeltaPhi",20,-1.2,1.2,"Cos(#Delta #Phi)");
   variable DrJet1Lep("$\\Delta R$ (Jet1Lep)","DrJet1Lep",10,0,6,"Dr Jet1 Lep");
   variable DrJet2Lep("$\\Delta R$ (Jet2Lep)","DrJet2Lep",10,0,6,"Dr Jet2 Lep");
   variable Jet2Pt("$p_{T}$ (Jet2)","Jet2Pt",20,0,400,"p_{T} (Jet2) [GeV]",1);
-  variable mt("$m_T$","mt",20,0,150,"mt [GeV]");
+  variable mt("$m_T$","mt",20,0,300,"mt [GeV]");
   variable HT20("$H_{T}$ (20)","HT20",20,0,1400,"HT20 [GeV]");
   variable HT30("HT30","HT30",20,0,1400,"HT30 [GeV]");
   variable JetLepMass("JetLepMass","JetLepMass",20,0,250,"M_{Jet+Lep}");
-  variable JetHBPt("$p_{T}$ (JetHB)","JetHBpt",20,0,200,"p_{T} (JetHB)");
-  variable Q80("Q80","Q80",20,-2,1,"Q80 [GeV]");
+  variable JetHBPt("$p_{T}$ (JetHB)","JetHBpt",20,0,1000,"p_{T} (JetHB)");
+  variable Q80("$Q_{80}$","Q80",20,-2,1,"Q80 [GeV]");
 
   vvariable.push_back(LepPt);
   vvariable.push_back(Jet1Pt);
@@ -377,11 +403,56 @@ int maximizeYield(){
 
   // Maximize
 
+  vector<double*> xFOMR;
+  vector<double*> yFOMR;
+  vector<double*> eFOMR;
+  vector<double*> xFOML;
+  vector<double*> yFOML;
+  vector<double*> eFOML;
+
   ofstream BestCuts;
   StartPrint(vprocess, BestCuts);
   for(int i=0; i<int(vvariable.size()); i++)
-    YieldMaximize(vprocess, vvariable[i], BestCuts);
+    {
+      TCanvas *c1 = new TCanvas("FOM","FOM",800,600);
+      c1->Divide(2,1);
+
+      xFOMR.push_back(new double[vvariable[i].GetBins()]);
+      yFOMR.push_back(new double[vvariable[i].GetBins()]);
+      eFOMR.push_back(new double[vvariable[i].GetBins()]);
+      xFOML.push_back(new double[vvariable[i].GetBins()]);
+      yFOML.push_back(new double[vvariable[i].GetBins()]);
+      eFOML.push_back(new double[vvariable[i].GetBins()]);
+
+      YieldMaximize(vprocess, vvariable[i], BestCuts, xFOMR[i], yFOMR[i], eFOMR[i], xFOML[i], yFOML[i], eFOML[i]);
+
+      TGraphErrors *graphR = new TGraphErrors(vvariable[i].GetBins(), xFOMR[i], yFOMR[i], 0, eFOMR[i]);
+      TGraphErrors *graphL = new TGraphErrors(vvariable[i].GetBins(), xFOML[i], yFOML[i], 0, eFOML[i]);
+
+      graphL->SetTitle((vvariable[i].GetExpression() + " < x").c_str());
+      graphL->GetXaxis()->SetTitle((vvariable[i].GetExpression()).c_str());
+      graphL->GetYaxis()->SetTitle("FOM");
+      graphL->SetMarkerStyle(kStar);
+      graphL->SetMarkerColor(4);
+
+      graphR->SetTitle((vvariable[i].GetExpression() + " > x").c_str());
+      graphR->GetXaxis()->SetTitle((vvariable[i].GetExpression()).c_str());
+      graphR->GetYaxis()->SetTitle("FOM");
+      graphR->SetMarkerStyle(kStar);
+      graphR->SetMarkerColor(4);
+
+      c1->cd(1);
+      graphL->Draw();
+      c1->cd(2);
+      graphR->Draw();
+
+      c1->SaveAs(("plots/FOM_" + vvariable[i].GetExpression() + ".png").c_str());
+      delete c1;
+      delete graphR;
+      delete graphL;
+    }
   EndPrint(BestCuts);
 
   return 0;
 }
+

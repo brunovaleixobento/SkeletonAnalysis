@@ -66,7 +66,7 @@ int shape()
   variable DrJet1Lep("DrJet1Lep","DrJet1Lep",10,0,6,"Dr Jet1 Lep");
   variable DrJet2Lep("DrJet2Lep","DrJet2Lep",10,0,6,"Dr Jet2 Lep");
   variable Jet2Pt("Jet2Pt","Jet2Pt",20,0,400,"p_{T} (Jet2) [GeV]",1);
-  variable mt("mt","mt",20,0,150,"mt [GeV]");
+  variable mt("mt","mt",15,0,150,"mt [GeV]");
   variable HT20("HT20","HT20",20,0,1400,"HT20 [GeV]");
   variable HT30("HT30","HT30",20,0,1400,"HT30 [GeV]");
   variable Q80("Q80","Q80",20,-2,1,"Q80 [GeV]");
@@ -235,7 +235,7 @@ int shape()
   //delete the vectors
 
   //Save file with all the plots
-  c1->SaveAs("plots/shape.pdf");
+  c1->SaveAs("plots/shape.png");
   c1->SaveAs("plots/shape.C");
 
   return 0;
