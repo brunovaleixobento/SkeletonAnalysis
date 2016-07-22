@@ -296,6 +296,22 @@ void YieldMaximize(vector<process> vprocess, variable variable, TCut initial_cut
   yieldFile << variable.GetName() << " & " << bestCut.GetName() << " & " << std::setprecision(3) << ratio << " $\\pm$ " << std::setprecision(3) << abs(ratio_Error) << "\\\\" << std::endl;
 }
 
+void GetFOM(vector<process> vprocess, TCut cut)
+{
+  cout.setf(ios::floatfield, ios::fixed);
+  cout << setprecision(2);
+
+  double f = 0.2;
+  double BG = countEvt(vprocess[0],cut) + countEvt(vprocess[1],cut);
+  double signal = countEvt(vprocess[2],cut);
+  double tmp = signal/sqrt(BG+f*f*BG*BG);
+
+  double tmp_error = 0;
+  tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+  tmp_error = sqrt(abs(tmp_error));
+
+  std::cout << tmp << " +/- " << tmp_error << std::endl;
+}
 
 void StartPrint(vector<process> vprocess, ofstream &yieldFile)
 {
@@ -329,7 +345,7 @@ void EndPrint(ofstream &yieldFile)
 
   // End document
   yieldFile << "\\end{tabular}" << std::endl;
-  yieldFile << "\\caption{Yields}" << std::endl;
+  yieldFile << "\\caption{FOM}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
   yieldFile << "\\end{document}" << std::endl;
 
@@ -388,17 +404,17 @@ int maximizeYield(){
   variable JetHBPt("$p_{T}$ (JetHB)","JetHBpt",20,0,1000,"p_{T} (JetHB)");
   variable Q80("$Q_{80}$","Q80",20,-2,1,"Q80 [GeV]");
 
-  vvariable.push_back(LepPt);
-  vvariable.push_back(Jet1Pt);
+//  vvariable.push_back(LepPt);
+//  vvariable.push_back(Jet1Pt);
 //  vvariable.push_back(Jet2Pt);
 //  vvariable.push_back(JetHBPt);
-  vvariable.push_back(HT20);
+//  vvariable.push_back(HT20);
 //  vvariable.push_back(Met);
 //  vvariable.push_back(mt);
 //  vvariable.push_back(Q80);
 //  vvariable.push_back(DrJet1Lep);
 //  vvariable.push_back(DrJet2Lep);
-  vvariable.push_back(CosDPhi);
+//  vvariable.push_back(CosDPhi);
 
   // Create TCuts
   TCut null = "1";
@@ -410,9 +426,10 @@ int maximizeYield(){
   TCut preSel = met && ISRjet && emu;
 
   TCut Met540 = "Met>540";
-  TCut CosDeltaPhi0 = "CosDeltaPhi < 0";
+  TCut CosDeltaPhi = "CosDeltaPhi < 0.25";
   TCut mt100 = "mt > 100";
   TCut jet1Pt550 = "Jet1Pt > 550";
+  TCut ht20700 = "HT20 > 700";
 
   //Set names of TCuts
   emu.SetName("emu");
@@ -421,14 +438,15 @@ int maximizeYield(){
   preSel.SetName("PreSelection");
 
   Met540.SetName("$\\cancel{E_T} > 540$");
-  CosDeltaPhi0.SetName("Cos($\\Delta \\phi$) < 0");
+  CosDeltaPhi.SetName("Cos($\\Delta \\phi$) < 0.25");
   mt100.SetName("$m_T$ > 100");
   jet1Pt550.SetName("$p_T$(Jet1)$ > 550");
+  ht20700.SetName("$H_T$ (20) $>$ 700");
 
   // Create VCut
 //  vector<TCut> vcut;
 
-  TCut selection = preSel && Met540 && mt100 && jet1Pt550;
+  TCut selection = preSel && Met540 && mt100;
   selection.SetName("Selection");
 
   // Maximize
@@ -493,12 +511,14 @@ int maximizeYield(){
         graphR->Draw();
       }
 
-      c1->SaveAs(("plots/FOM_mt100_" + vvariable[i].GetExpression() + ".png").c_str());
+      c1->SaveAs(("plots/FOM_Met540-mt100_" + vvariable[i].GetExpression() + ".png").c_str());
       delete c1;
       delete graphR;
       delete graphL;
     }
   EndPrint(BestCuts);
+
+  GetFOM(vprocess, preSel);
 
   return 0;
 }

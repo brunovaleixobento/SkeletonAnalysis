@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
 
 #include "TROOT.h"
 #include "TFile.h"
@@ -12,6 +14,13 @@
 #include "vector"
 
 using std::string;
+
+string to_string_with_precision(double a_value, int n = 3)
+  {
+    std::ostringstream out;
+    out << std::setprecision(n) << a_value;
+    return out.str();
+  }
 
 class process{
 public:
@@ -40,12 +49,12 @@ private:
 
 //// Monte Carlo
 
-int countTotal(process &process)
+double countTotal(process &process)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
-  int Total = 0;
+  double Total = 0;
   process.GetChain()->Draw("Njet>>tmp", "XS*5000/Nevt", "goff");
   Total = int(tmp->Integral());
 
@@ -54,13 +63,13 @@ int countTotal(process &process)
   return Total;
 }
 
-int countEvt(process &process, TCut Cut)
+double countEvt(process &process, TCut Cut)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
   // Get number of events after a cut
-  int Sel = 0;
+  double Sel = 0;
   process.GetChain()->Draw("Njet>>tmp","XS*5000/Nevt"*Cut, "goff");
   Sel = tmp->Integral();
 
@@ -72,12 +81,12 @@ int countEvt(process &process, TCut Cut)
 
 // ERROR
 
-int countError(TChain* chain, TCut cut)
+double countError(TChain* chain, TCut cut)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
-  int Error = 0;
+  double Error = 0;
   tmp->Sumw2();
   chain->Draw("Njet>>tmp", "XS*5000/Nevt"*cut, "goff");
 
@@ -88,12 +97,12 @@ int countError(TChain* chain, TCut cut)
   return Error;
 }
 
-int countDataError(TChain* chain, TCut cut)
+double countDataError(TChain* chain, TCut cut)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
-  int DataError = 0;
+  double DataError = 0;
   tmp->Sumw2();
   chain->Draw("Njet>>tmp", cut, "goff");
 
@@ -106,13 +115,13 @@ int countDataError(TChain* chain, TCut cut)
 
 //// Data
 
-int countDataTotal(TChain* chain)
+double countDataTotal(TChain* chain)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
   // Get number of events after a cut
-  int Total = 0;
+  double Total = 0;
   chain->Draw("Njet>>tmp","", "goff");
   Total = tmp->Integral();
 
@@ -120,13 +129,13 @@ int countDataTotal(TChain* chain)
   return Total;
 }
 
-int countDataEvt(TChain* chain, TCut Cut)
+double countDataEvt(TChain* chain, TCut Cut)
 {
   // Create temporary histogram
   TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
 
   // Get number of events after a cut
-  int Evt = 0;
+  double Evt = 0;
   chain->Draw("Njet>>tmp",Cut, "goff");
   Evt = tmp->Integral();
 
@@ -135,15 +144,20 @@ int countDataEvt(TChain* chain, TCut Cut)
 }
 
 
-void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matrixError)
+void Print(vector<process> vprocess, vector<TCut> vcut, double** matrix, double** matrixError)
 {
   ofstream yieldFile;
 
+  string filename = "Tables/case2";
+
   // Begin document
-  yieldFile.open ("yield.tex");
+  yieldFile.open (filename + ".tex");
   yieldFile << "\\documentclass{article}" << std::endl;
 //  yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
   yieldFile << "\\usepackage{cancel}" << std::endl;
+  yieldFile << "\\usepackage{geometry}" << std::endl;
+  yieldFile << "\\geometry{a4paper, total={170mm,257mm}, left=20mm, top=20mm,}" << std::endl;
+
   yieldFile << "\\title{CMS SUMMER 2016}" << std::endl;
   yieldFile << "\\author{Beatriz Lopes &  Bruno Valeixo Bento}" << std::endl;
   yieldFile << "\\date{July 2016}" << std::endl;
@@ -152,7 +166,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matr
 
   // Create table
   yieldFile << "\\begin{table}[!h]" << std::endl;
-  yieldFile << "\\centering" << std::endl;
+ // yieldFile << "\\centering" << std::endl;
 
   string col = "ll";
   string l1 = "Process & No cut";
@@ -170,67 +184,78 @@ void Print(vector<process> vprocess, vector<TCut> vcut, int** matrix, int** matr
   yieldFile << l1 << "\\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
+  yieldFile.setf(ios::floatfield,ios::fixed);
+  yieldFile<<setprecision(2);
+
   // Background
   for(int i=0; i<int(vprocess.size()-1); i++)
   {
-    string line = vprocess[i].GetName();
+    yieldFile << vprocess[i].GetName(); 
     for(int j=0; j<int(vcut.size()+1); j++)
     {
-      line += " & " + to_string(matrix[i][j]) + " $\\pm$ " + to_string(matrixError[i][j]);
+      yieldFile << " & " << matrix[i][j] << " $\\pm$" << matrixError[i][j];
     }
-    line += " \\\\";
-    yieldFile << line << std::endl;
+      yieldFile << " \\\\" << std::endl;
   }
 
-  string lineTB = "Total Background";
+  yieldFile << "Total Background";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineTB += " & " + to_string(matrix[vprocess.size()][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()][j]);
+//    lineTB += " & " + to_string(matrix[vprocess.size()][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()][j]);
+    yieldFile << " & " << matrix[vprocess.size()][j] << " $\\pm$ " << matrixError[vprocess.size()][j];
   }
-  lineTB += " \\\\";
-  yieldFile << lineTB << std::endl;
-  yieldFile << "\\hline" << std::endl;
+//  lineTB += " \\\\";
+//  yieldFile << lineTB << std::endl;
+    yieldFile << " \\\\" << std::endl;
+    yieldFile << "\\hline" << std::endl;
 
   // Signal
-  string lineS = "Signal";
+//  string lineS = "Signal";
+  yieldFile << "Signal";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineS += " & " + to_string(matrix[vprocess.size()-1][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()-1][j]);;
+//    lineS += " & " + to_string(matrix[vprocess.size()-1][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()-1][j]);
+      yieldFile << " & " << matrix[vprocess.size()-1][j] << " $\\pm$ " << matrixError[vprocess.size()-1][j];
   }
-  lineS += " \\\\";
-  yieldFile << lineS << std::endl;
+//  lineS += " \\\\";
+
+  yieldFile << " \\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
   // Signal + Background
-  string lineT = "Signal + Background";
+//  string lineT = "Signal + Background";
+  yieldFile << "Signal + Background";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineT += " & " + to_string(matrix[vprocess.size()+1][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()+1][j]);
+//    lineT += " & " + to_string(matrix[vprocess.size()+1][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()+1][j]);
+    yieldFile << " & " << matrix[vprocess.size()+1][j] << " $\\pm$ " << matrixError[vprocess.size()+1][j];
   }
-  lineT += " \\\\";
-  yieldFile << lineT << std::endl;
+//  lineT += " \\\\";
+  yieldFile << " \\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
   // Data
-  string lineD = "Data";
+//  string lineD = "Data";
+  yieldFile << "Data";
   for(int j=0; j<int(vcut.size()+1); j++)
   {
-    lineD += " & " + to_string(matrix[vprocess.size()+2][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()+2][j]);
+//    lineD += " & " + to_string(matrix[vprocess.size()+2][j]) + " $\\pm$ " + to_string(matrixError[vprocess.size()+2][j]);
+    yieldFile << " & " << matrix[vprocess.size()+2][j] << " $\\pm$ " << matrixError[vprocess.size()+2][j];
   }
-  lineD += " \\\\";
-  yieldFile << lineD << std::endl;
+//  lineD += " \\\\";
+  yieldFile << " \\\\" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
 
   // End document
   yieldFile << "\\end{tabular}" << std::endl;
-  yieldFile << "\\caption{Yields}" << std::endl;
+  yieldFile << "\\caption{Yields for " << filename << "}" << std::endl;
   yieldFile << "\\end{table}" << std::endl;
   yieldFile << "\\end{document}" << std::endl;
-  
-  system("pdflatex yield.tex");
-  system("gnome-open yield.pdf");
+
+  system(("pdflatex " + filename + ".tex").c_str());
+  system(("gnome-open " + filename + ".pdf").c_str());
 }
 
 int printYield(){
@@ -275,28 +300,18 @@ int printYield(){
 //  TCut mt = "mt < 135";
   TCut preSel = met && emu && ISRjet;
 
-  TCut cosDPhi = "CosDeltaPhi <0.96";
-  TCut ht20 = "HT20 > 800";
-  TCut jet1Pt = "Jet1Pt > 550";
-  TCut jet2Pt = "Jet2Pt > 220";
-  TCut jetHBPt = "JetHBpt > 550";
-  TCut metFOM = "Met > 540";
-  TCut mt = "mt > 150";
-
-  TCut selection = preSel && metFOM && ht20;
+  TCut selection = preSel;
 
   TCut Met540 = "Met>540";
   TCut mt100 = "mt > 100";
   TCut jet1Pt550 = "Jet1Pt > 550";
-
+  TCut CosDeltaPhi025 = "CosDeltaPhi < 0.25";
+  TCut ht20700 = "HT20 > 700";
 
   //Set names of TCuts
   emu.SetName("emu");
   ISRjet.SetName("$p_T$(Jet1)$ > 110$");
   electron.SetName("electron");
-  njets.SetName("$Njet > 2$");
-  lepPt.SetName("$p_{T} (Lep) < 17$");
-  mt.SetName("$m_{T} < 135$");
   preSel.SetName("PreSelection");
   selection.SetName("Selection FOM");
 
@@ -307,21 +322,23 @@ int printYield(){
   //vcut.push_back(met*ISRjet*emu);
   vcut.push_back(preSel);
   vcut.push_back(Met540*preSel);
-  vcut.push_back(mt100*Met540*preSel);
-  vcut.push_back(jet1Pt550*mt100*Met540*preSel);
+  vcut.push_back(CosDeltaPhi025*Met540*preSel);
+  vcut.push_back(ht20700*CosDeltaPhi025*Met540*preSel);
 
   vcut[1].SetName("Met $>$ 540");
-  vcut[2].SetName("mt $>$ 100");
-  vcut[3].SetName("jet1Pt $>$ 550");
+  vcut[2].SetName("Cos$\\Delta \\phi <$ 0.25");
+//  vcut[2].SetName("$m_T >$ 100");
+  vcut[3].SetName("$H_T$ (20) $>$ 700");
+//  vcut[3].SetName("$p_T$ (Jet) $>$ 550");
 
   // Create matrix
-  int** matrix = new int*[vprocess.size()+3];
+  double** matrix = new double*[vprocess.size()+3];
   for(int i=0; i<int(vprocess.size()+3); i++)
-    matrix[i] = new int[vcut.size()+1];
+    matrix[i] = new double[vcut.size()+1];
 
-  int** matrixError = new int*[vprocess.size()+3];
+  double** matrixError = new double*[vprocess.size()+3];
   for(int i=0; i<int(vprocess.size()+3); i++)
-    matrixError[i] = new int[vcut.size()+1];
+    matrixError[i] = new double[vcut.size()+1];
 
   // Total
   for(int i=0;i<int(vprocess.size());i++)

@@ -74,18 +74,18 @@ int shape()
   variable JetHBPt("JetHBpt","JetHBpt",20,0,200,"p_{T} (JetHB)");
 
 
-  vvariable.push_back(LepPt);
+//  vvariable.push_back(LepPt);
 //  vvariable.push_back(LepEta);
-  vvariable.push_back(Njet);
-  vvariable.push_back(Jet1Pt);
-  vvariable.push_back(Jet2Pt);
+//  vvariable.push_back(Njet);
+//  vvariable.push_back(Jet1Pt);
+//  vvariable.push_back(Jet2Pt);
 //  vvariable.push_back(Jet1Eta);
   vvariable.push_back(Met);
   vvariable.push_back(CosDPhi);
-  vvariable.push_back(DrJet1Lep);
-  vvariable.push_back(DrJet2Lep);
+//  vvariable.push_back(DrJet1Lep);
+//  vvariable.push_back(DrJet2Lep);
   vvariable.push_back(mt);
-  vvariable.push_back(HT20);
+//  vvariable.push_back(HT20);
   vvariable.push_back(Q80);
 //  vvariable.push_back(HT30);
 //  vvariable.push_back(JetLepMass);
@@ -213,7 +213,7 @@ int shape()
 	        Stack->SetMaximum(stopH[i]->GetMaximum()*1.05);
 	      }
 
-      TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
+     // TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
       // Draw in Canvas c2 - Pad1
 
@@ -224,7 +224,7 @@ int shape()
       Stack->Draw("HIST goff");
       stopH[i]->Draw("HIST same goff");
 
-      TLegend * legenda2 = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
+      //TLegend * legenda2 = gPad->BuildLegend(0.8,0.69,0.65,0.89,"NDC");
 
       // Save individual plots as .pdf and .C
       //c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
