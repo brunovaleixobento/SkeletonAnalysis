@@ -53,6 +53,113 @@ private:
 
 variable::variable(string name, string expression, int bins, double xmin, double xmax, string leg, int Logy): fname(name), fexpression(expression), fbins(bins), fxmin(xmin), fxmax(xmax), fleg(leg), fLogy(Logy){}
 
+class process{
+public:
+  process(TChain* chain, string name=""):fchain(chain),fname(name),Nevt(0),Nexp_nosel(0),Nexp_sel(0)
+  {fselection = "";}
+
+  string GetName() {return fname;}
+  TChain* GetChain() {return fchain;}
+  int GetNevt() {return Nevt;}
+  int GetNexp_nosel() {return Nexp_nosel;}
+  int GetNexp_sel() {return Nexp_sel;}
+  string GetSelection() {return fselection;}
+
+  void SetNevt_nosel(int evt_nosel) {Nexp_nosel = evt_nosel;}
+  void SetNevt_sel(int evt_sel) {Nexp_sel = evt_sel;}
+  void SetSelection(string selection) {fselection = selection;}
+
+private:
+  TChain* fchain;
+  string fname;
+  string fselection;
+  int Nevt;
+  int Nexp_nosel;
+  int Nexp_sel;
+};
+
+int countEvt(process &process, TCut Cut)
+{
+  // Create temporary histogram
+  TH1D* tmp = new TH1D("tmp", "tmp", 30, 0, 1000);
+
+  // Get number of events after a cut
+  int Sel = 0;
+  process.GetChain()->Draw("Njet>>tmp","XS*5000/Nevt"*Cut, "goff");
+  Sel = tmp->Integral();
+
+  delete tmp;
+  process.SetSelection(Cut.GetName());
+  process.SetNevt_sel(Sel);
+  return Sel;
+}
+
+TCut FindBestParameters(vector<process> vprocess, variable cosdeltaphi, variable q80, TCut initial_cut)
+{
+  double a = 0, b = 0;
+  int intervals = 100;
+  double f = 0.2;
+  double BG = 0, signal = 0, tmp = 0, tmp_error = 0;
+  double FOM_a = 0, eFOM_a = 0;
+
+  //Find best a
+  b=-1;
+  double step_a = 1/intervals;
+  TCut BestCut_a = "1";
+
+  for(int i=0; i<intervals;i++)
+    {
+      TCut cut = (q80.GetExpression() + "<" + cosdeltaphi.GetExpression() + "-" +  std::to_string(i*step_a) + "||" + q80.GetExpression() + ">" + cosdeltaphi.GetExpression() + "+" +  std::to_string(i*step_a)).c_str();
+
+        cut.SetName((q80.GetExpression() + "<" + cosdeltaphi.GetExpression() + "-" +  std::to_string(i*step_a) + "||" + q80.GetExpression() + ">" + cosdeltaphi.GetExpression() + "+" +  std::to_string(i*step_a)).c_str());
+
+        BG = countEvt(vprocess[0],cut*initial_cut) + countEvt(vprocess[1],cut*initial_cut);
+        signal = countEvt(vprocess[2],cut*initial_cut);
+        tmp = signal/sqrt(BG+f*f*BG*BG);
+
+        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+        tmp_error = sqrt(abs(tmp_error));
+	
+	if(tmp>FOM_a)
+	  {
+	    FOM_a = tmp;
+	    eFOM_a = tmp_error;
+	    BestCut_a = cut;
+	    a=i*step_a;
+	  }
+    }
+  std::cout << FOM_a << std::endl;
+
+  //Find best b
+  TCut BestCut_b = "1";
+  double FOM_b = 0, eFOM_b = 0;
+  double step_b = 2/intervals;
+  
+  for(int i=0; i<intervals;i++)
+    {
+      TCut cut = BestCut_a || (q80.GetExpression() + "<-" + cosdeltaphi.GetExpression() + "+" +  std::to_string(i*step_b)).c_str();
+			       
+      //cut.SetName((BestCut_a.GetName() + "||" + q80.GetExpression() + "<-" + cosdeltaphi.GetExpression() + "+" +  std::to_string(i*step_b)).c_str());
+
+        BG = countEvt(vprocess[0],cut*initial_cut) + countEvt(vprocess[1],cut*initial_cut);
+        signal = countEvt(vprocess[2],cut*initial_cut);
+        tmp = signal/sqrt(BG+f*f*BG*BG);
+
+        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+        tmp_error = sqrt(abs(tmp_error));
+	
+	if(tmp>FOM_b)
+	  {
+	    FOM_b=tmp;
+	    eFOM_b = tmp_error;
+	    BestCut_b = cut;
+	  }
+    }
+  std::cout << FOM_b << std::endl;
+
+  return BestCut_b;
+}
+
 int plotVars()
 {
   vector<variable> vvariable;
@@ -100,20 +207,32 @@ int plotVars()
 
   TFile* stopFile = new TFile((basedirectory + "T2DegStop_300_270_bdt.root").c_str(), "READ");
 
-  TChain* wjetsTree = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
-  wjetsTree->Add((basedirectory + "Wjets_100to200_bdt.root").c_str());
-  wjetsTree->Add((basedirectory + "Wjets_200to400_bdt.root").c_str());
-  wjetsTree->Add((basedirectory + "Wjets_400to600_bdt.root").c_str());
-  wjetsTree->Add((basedirectory + "Wjets_600toInf_bdt.root").c_str());
+  TChain* wjetsChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
+  wjetsChain->Add((basedirectory + "Wjets_100to200_bdt.root").c_str());
+  wjetsChain->Add((basedirectory + "Wjets_200to400_bdt.root").c_str());
+  wjetsChain->Add((basedirectory + "Wjets_400to600_bdt.root").c_str());
+  wjetsChain->Add((basedirectory + "Wjets_600toInf_bdt.root").c_str());
 
   // Data
   TFile* dataFile = new TFile((basedirectory + "PseudoData_bdt.root").c_str());
 
   // Get ttree(s) from input file(s)
-  TTree* ttbarTree = static_cast<TTree*>(ttbarFile->Get("bdttree"));
-  TTree* stopTree = static_cast<TTree*>(stopFile->Get("bdttree"));
+  TChain* ttbarChain = new TChain("bdttree");
+  ttbarChain->Add((basedirectory + "TTJets_LO_bdt.root").c_str());
 
-  TTree* dataTree = static_cast<TTree*>(dataFile->Get("bdttree"));
+  TChain* stopChain = new TChain("bdttree");
+  ttbarChain->Add((basedirectory + "T2DegStop_300_270_bdt.root").c_str());
+
+  //vector of processes
+  vector<process> vprocess;
+
+  process pwjets(wjetsChain,"wjets");
+  process pttbar(ttbarChain,"ttbar");
+  process psignal(stopChain,"signal");
+
+  vprocess.push_back(pwjets);
+  vprocess.push_back(pttbar);
+  vprocess.push_back(psignal);
 
   // Create canvas
   TCanvas * c1 = new TCanvas("Stop","Stop", 800, 600);
@@ -131,6 +250,11 @@ int plotVars()
   TH2D *wjetsH = new TH2D(swjetsH.c_str(), "wjets", vvariable[0].GetBins(), vvariable[0].GetXMin(), vvariable[0].GetXMax(), vvariable[1].GetBins(), vvariable[1].GetXMin(), vvariable[1].GetXMax());
   TH2D *stopH = new TH2D(sstopH.c_str(), "Signal", vvariable[0].GetBins(), vvariable[0].GetXMin(), vvariable[0].GetXMax(), vvariable[1].GetBins(), vvariable[1].GetXMin(), vvariable[1].GetXMax());
   TH2D *backgroundH = new TH2D(sbackgroundH.c_str(), "Background", vvariable[0].GetBins(), vvariable[0].GetXMin(), vvariable[0].GetXMax(), vvariable[1].GetBins(), vvariable[1].GetXMin(), vvariable[1].GetXMax());
+
+  TLine *reta = new TLine(-1,-1,0.8,0.8);
+  TLine *retamais = new TLine(-1,-0.8,0.8,1);
+  TLine *retamenos = new TLine(-1,-1.2,0.8,0.6);
+
 
   ttbarH->SetFillColor(kGreen-7);
   ttbarH->SetLineColor(kGreen-7);
@@ -152,20 +276,26 @@ int plotVars()
   TCut met = "Met > 300";
 
   TCut MetFOM = "Met > 540";
-  TCut CosDeltaPhi = "CosDeltaPhi < 0.8";
+  TCut cosDeltaPhi = "CosDeltaPhi < 0.8";
   TCut mtFOM = "mt > 100";
+
+  //  TCut rectangle = "Q80>CosDeltaPhi+0.2 || Q80<CosDeltaPhi-0.2 || Q80<-CosDeltaPhi-0.4";
 
   TCut preSel = emu && ISRjet && met;
   preSel.SetName("PreSelection");
 
-  TCut selection = preSel && CosDeltaPhi;
+  TCut selection1 = preSel && cosDeltaPhi;
+ 
+  TCut rectangle = FindBestParameters(vprocess,CosDPhi,Q80,selection1);
+ 
+  TCut selection = selection1 && rectangle;
   selection.SetName("Selection");
-
+  
   // Fill Histograms
 
-  ttbarTree->Draw((vvariable[1].GetExpression() + ":" + vvariable[0].GetExpression() +">>"+sttbarH).c_str(),"XS*5000/Nevt"*(selection),"goff");
-  wjetsTree->Draw((vvariable[1].GetExpression() + ":" + vvariable[0].GetExpression() +">>"+swjetsH).c_str(),"XS*5000/Nevt"*(selection),"goff");
-  stopTree->Draw((vvariable[1].GetExpression() + ":" + vvariable[0].GetExpression() +">>"+sstopH).c_str(),"XS*5000/Nevt"*(selection),"goff");
+  ttbarChain->Draw((vvariable[1].GetExpression() + ":" + vvariable[0].GetExpression() +">>"+sttbarH).c_str(),"XS*5000/Nevt"*(selection),"goff");
+  wjetsChain->Draw((vvariable[1].GetExpression() + ":" + vvariable[0].GetExpression() +">>"+swjetsH).c_str(),"XS*5000/Nevt"*(selection),"goff");
+  stopChain->Draw((vvariable[1].GetExpression() + ":" + vvariable[0].GetExpression() +">>"+sstopH).c_str(),"XS*5000/Nevt"*(selection),"goff");
 
   backgroundH->Add(ttbarH, wjetsH);
 
@@ -174,6 +304,9 @@ int plotVars()
 
   c1->cd(1);
   backgroundH->Draw("COLZ");
+  reta->Draw("same");
+  retamais->Draw("same");
+  retamenos->Draw("same");
   c1->cd(2);
   stopH->Draw("COLZ");
 
@@ -204,218 +337,6 @@ int plotVars()
   // Save file with all the plots
   c1->SaveAs("plots/plots2D/plot2D_CosDeltaPhiQ80-background_CosDeltaPhi08-mt100.png");
   c1->SaveAs("plots/plots2D/plot2D_CosDeltaPhiQ80-background_CosDeltaPhi08-mt100.C");
-
-  // Plots
-/*  for(int i=0;i<int(vvariable.size());i++)
-    {
-      TCanvas * c2 = new TCanvas("variable","variable", 800, 600);
-
-      string sttbarH =  "ttbarH"+std::to_string(i);
-      string swjetsH =  "wjetsH"+std::to_string(i);
-      string sstopH =  "stopH"+std::to_string(i);
-      string sdataH = "dataH"+std::to_string(i);
-      string sbackgroundH = "backgroundH"+std::to_string(i);
-      string sratioH = "ratioH"+std::to_string(i);
-      //string semptyH = "empty"+std::to_string(i);
-
-      // Create histogram(s)
-      ttbarH.push_back(new TH1D(sttbarH.c_str(), "ttbar", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-      wjetsH.push_back(new TH1D(swjetsH.c_str(), "wjets", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-      stopH.push_back(new TH1D(sstopH.c_str(), "Signal", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-      dataH.push_back(new TH1D(sdataH.c_str(), "Data", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-      backgroundH.push_back(new TH1D(sbackgroundH.c_str(), "", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-      ratioH.push_back(new TH1D(sratioH.c_str(), "", vvariable[i].GetBins(), vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-      //emptyH.push_back(new TH1D(semptyH.c_str(),"",vvariable[i].GetBins(),vvariable[i].GetXMin(), vvariable[i].GetXMax()));
-
-      ttbarH[i]->SetFillColor(kGreen-7);
-      ttbarH[i]->SetLineColor(kGreen-7);
-
-      wjetsH[i]->SetFillColor(kAzure+5);
-      wjetsH[i]->SetLineColor(kAzure+5);
-
-      //stopH->SetFillColor(kRed);
-      stopH[i]->SetLineColor(kRed);
-
-      dataH[i]->SetLineColor(kBlack);
-      dataH[i]->Sumw2();
-
-      backgroundH[i]->SetMaximum(ratioH[i]->GetMaximum()*1.5);
-      backgroundH[i]->SetMinimum(ratioH[i]->GetMinimum()*0.5);
-
-      TLine *line1 = new TLine(vvariable[i].GetXMin(),1,vvariable[i].GetXMax(),1);
-
-      if(vvariable.size()!=1)
-	      c1->cd(i+1);
-      else
-	      c1->cd();
-
-      // Divide Pads in Canvas c1
-
-      xup1 = 0.99;
-      yup1 = 0.99;
-      xlow1 = 0.01;
-      ylow1 = 0.2;
-
-      xup2 = 0.99;
-      yup2 = ylow1;
-      xlow2 = 0.01;
-      ylow2 = 0.01;
-
-      gPad->Divide(1,2);
-      gPad->cd(2);
-      gPad->SetPad(xlow2,ylow2,xup2,yup2);
-
-      if(vvariable.size()!=1)
-	      c1->cd(i+1);
-      else
-	      c1->cd();
-
-      gPad->cd(1);
-      gPad->SetPad(xlow1,ylow1,xup1,yup1);
-
-      //Create TCuts
-      TCut muon = "(abs(LepID)==13)&&(LepIso03<0.2)";
-      TCut electron = "(abs(LepID)==11)&&(LepIso03<0.2)";
-      TCut emu = muon||electron;
-      TCut ISRjet = "Jet1Pt > 110";
-      TCut met = "Met > 300";
-      TCut jetLepMass = "JetLepMass < 100";
-      //TCut njets = "Njet > 1";
-      TCut lepPt = "LepPt < 17";
-      //TCut ht30 = "HT30 > 300";
-      //TCut ht20 = "HT20 > 450";
-      //TCut mt = "mt < 70";
-      TCut jethbpt = "JetHBpt < 80";
-
-      TCut selection = emu && ISRjet && met && jetLepMass && jethbpt && lepPt;
-
-      // Fill histogram(s) signal & BACKGROUND & DATA
-      ttbarTree->Draw((vvariable[i].GetExpression()+">>"+sttbarH).c_str(),"XS*5000/Nevt"*(selection),"goff");
-      wjetsTree->Draw((vvariable[i].GetExpression()+">>"+swjetsH).c_str(),"XS*5000/Nevt"*(selection),"goff");
-      stopTree->Draw((vvariable[i].GetExpression()+">>"+sstopH).c_str(),"XS*5000/Nevt"*(selection),"goff");  //MULTIPLICAR O SINAL
-      dataTree->Draw((vvariable[i].GetExpression()+">>"+sdataH).c_str(),selection,"goff");
-
-      THStack *Stack = new THStack(vvariable[i].GetName().c_str(), (vvariable[i].GetName()+";"+vvariable[i].GetLeg().c_str()+";Evt.").c_str());
-      Stack->Add(ttbarH[i]);
-      Stack->Add(wjetsH[i]);
-
-      gPad->SetLogy(vvariable[i].GetLogy());
-
-      backgroundH[i]->Add(ttbarH[i],wjetsH[i]);
-      ratioH[i]->Divide(dataH[i],backgroundH[i]);
-      ratioH[i]->Sumw2();
-
-      for(int j=0; j< backgroundH[i]->GetNbinsX()+1; j++)
-      {
-        if(backgroundH[i]->GetBinContent(j)<1e-8)
-          backgroundH[i]->SetBinError(j,0);
-        else
-          backgroundH[i]->SetBinError(j, backgroundH[i]->GetBinError(j)/backgroundH[i]->GetBinContent(j));
-        backgroundH[i]->SetBinContent(j,1);
-      }
-
-      TGraphErrors *gError = new TGraphErrors(backgroundH[i]);
-
-      // Draw plots
-      gStyle->SetOptStat(0);
-
-      Stack->Draw("HIST");
-      stopH[i]->Draw("HIST same");
-      dataH[i]->Draw("E same");
-
-      if(Stack->GetMaximum() > stopH[i]->GetMaximum() && Stack->GetMaximum() > dataH[i]->GetMaximum())
-	      {
-	        Stack->SetMaximum(Stack->GetMaximum()*1.05);
-	    	}
-      else if(stopH[i]->GetMaximum() > dataH[i]->GetMaximum())
-	      {
-	        Stack->SetMaximum(stopH[i]->GetMaximum()*1.05);
-	      }
-	    else 
-	      {
-	        Stack->SetMaximum(dataH[i]->GetMaximum()*1.05);
-	      }
-
-      TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
-
-      if(vvariable.size()!=1)
-	      c1->cd(i+1);
-      else
-	      c1->cd();
-
-      gPad->cd(2);
-      backgroundH[i]->Draw();
-      gError->Draw("3");
-
-      ratioH[i]->Draw("E same");
-
-      line1->Draw("same");
-      gError->SetFillColor(kOrange+7);
-      gError->SetFillStyle(3144);
-      backgroundH[i]->GetYaxis()->SetNdivisions(5);
-      backgroundH[i]->GetYaxis()->SetRangeUser(0.5,1.5);
-      backgroundH[i]->GetYaxis()->SetTickSize(0.01);
-      backgroundH[i]->GetYaxis()->SetLabelSize(0.15);
-      backgroundH[i]->GetXaxis()->SetLabelSize(0.15);
-      backgroundH[i]->GetYaxis()->SetTitle("Data/ #Sigma MC");
-      backgroundH[i]->GetYaxis()->SetTitleSize(0.15);
-      backgroundH[i]->GetYaxis()->SetTitleOffset(0.35);
-      gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
-
-      // Divide Canvas c2
-
-      c2->cd();
-
-      gPad->Divide(1,2);
-      gPad->cd(2);
-      gPad->SetPad(xlow2, ylow2, xup2, yup2);
-
-      c2->cd();
-      gPad->cd(1);
-      gPad->SetPad(xlow1, ylow1, xup1, yup1);
-
-      // Draw in Canvas c2 - Pad1
-
-      gPad->SetLogy(vvariable[i].GetLogy());
-
-      Stack->Draw("HIST goff");
-      stopH[i]->Draw("HIST same goff");
-      dataH[i]->Draw("E same goff");
-
-      TLegend * legenda2 = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
-
-      //Draw in Canvas c2 - Pad2
-      c2->cd();
-      gPad->cd(2);
-
-      gStyle->SetOptStat(0);
-
-      backgroundH[i]->Reset("ICE");
-      backgroundH[i]->SetTitle(";;Data/ #Sigma MC");
-
-      backgroundH[i]->Draw();
-      gError->Draw("3");
-
-      ratioH[i]->Draw("E same");
-
-      line1->Draw("same");
-      gError->SetFillColor(kOrange+7);
-      gError->SetFillStyle(3144);
-      backgroundH[i]->GetYaxis()->SetTickSize(0.01);
-      backgroundH[i]->GetYaxis()->SetNdivisions(5);
-      backgroundH[i]->GetYaxis()->SetLabelSize(0.15);
-      backgroundH[i]->GetXaxis()->SetLabelSize(0.15);
-      backgroundH[i]->GetYaxis()->SetTitleSize(0.15);
-      backgroundH[i]->GetYaxis()->SetTitleOffset(0.35);
-      gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
-
-      // Save individual plots as .pdf and .C
-      c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
-      c2->SaveAs(("plots/"+vvariable[i].GetName()+".C").c_str());
-
-      delete c2;
-    }*/
-  //delete the vectors
 
   return 0;
 }

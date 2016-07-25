@@ -431,6 +431,9 @@ int maximizeYield(){
   TCut jet1Pt550 = "Jet1Pt > 550";
   TCut ht20700 = "HT20 > 700";
 
+  TCut rectangle = "Q80>CosDeltaPhi+0.2 || Q80<CosDeltaPhi-0.2 || Q80<-CosDeltaPhi-0.4";
+  TCut preselrectangle = rectangle && preSel && "CosDeltaPhi<0.8";
+
   //Set names of TCuts
   emu.SetName("emu");
   ISRjet.SetName("$p_T$(Jet1)$ > 110$");
@@ -518,7 +521,7 @@ int maximizeYield(){
     }
   EndPrint(BestCuts);
 
-  GetFOM(vprocess, preSel);
+  GetFOM(vprocess, preselrectangle);
 
   return 0;
 }
