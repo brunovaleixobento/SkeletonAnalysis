@@ -192,7 +192,7 @@ int shape()
           wjetsH[i]->SetBinContent(j, wjetsH[i]->GetBinContent(j)/BGIntegral);
         }
 
-      THStack *Stack = new THStack(vvariable[i].GetName().c_str(), (vvariable[i].GetName()+";"+vvariable[i].GetLeg().c_str()+";Evt.").c_str());
+      THStack *Stack = new THStack(vvariable[i].GetName().c_str(), (vvariable[i].GetName()+";"+vvariable[i].GetLeg().c_str()+";AU").c_str());
       Stack->Add(ttbarH[i]);
       Stack->Add(wjetsH[i]);
 
@@ -213,7 +213,7 @@ int shape()
 	        Stack->SetMaximum(stopH[i]->GetMaximum()*1.05);
 	      }
 
-     // TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
+     //TLegend * legenda = gPad->BuildLegend(0.895,0.69,0.65,0.89,"NDC");
 
       // Draw in Canvas c2 - Pad1
 
