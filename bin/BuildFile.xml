@@ -1,0 +1,11 @@
+<use name="root"/>
+<use name="roottmva"/>
+<use name="rootrflx"/>
+<use name="roofit"/>
+<use name="roostats"/>
+<use name="UserCode/SkeletonAnalysis"/>
+<environment>
+  <bin name="trainMVA"         file="trainMVA.cc">      </bin>
+</environment>
+
+<Flags CXXFLAGS="-g"/>

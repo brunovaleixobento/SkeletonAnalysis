@@ -1,0 +1,3 @@
+{
+  TMVA::TMVAGui("TMVA.root");
+}
