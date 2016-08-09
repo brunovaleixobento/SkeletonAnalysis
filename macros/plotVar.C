@@ -73,18 +73,16 @@ int plotVar()
   variable JetLepMass("JetLepMass","JetLepMass",20,0,250,"M_{Jet+Lep}");
   variable JetHBPt("JetHBpt","JetHBpt",20,0,500,"p_{T} (JetHB)");
 
-  variable mtHT30("mtHT30","HT30 - mt*5",30,0,1400,"HT30 - 5 \\times m_{T}");
-
-  vvariable.push_back(LepPt);
+//  vvariable.push_back(LepPt);
 //  vvariable.push_back(LepEta);
   vvariable.push_back(Njet);
   vvariable.push_back(Jet1Pt);
-  vvariable.push_back(Jet2Pt);
+//  vvariable.push_back(Jet2Pt);
 //  vvariable.push_back(Jet1Eta);
   vvariable.push_back(Met);
   vvariable.push_back(CosDPhi);
-  vvariable.push_back(DrJet1Lep);
-  vvariable.push_back(DrJet2Lep);
+//  vvariable.push_back(DrJet1Lep);
+//  vvariable.push_back(DrJet2Lep);
   vvariable.push_back(mt);
   vvariable.push_back(HT20);
   vvariable.push_back(Q80);
@@ -99,6 +97,11 @@ int plotVar()
 
   TFile* stopFile = new TFile((basedirectory + "T2DegStop_300_270_bdt.root").c_str(), "READ");
 
+  TFile* wjetsFile1 = new TFile((basedirectory + "Wjets_100to200_bdt.root").c_str(), "READ");
+  TFile* wjetsFile2 = new TFile((basedirectory + "Wjets_200to400_bdt.root").c_str(), "READ");
+  TFile* wjetsFile3 = new TFile((basedirectory + "Wjets_400to600_bdt.root").c_str(), "READ");
+  TFile* wjetsFile4 = new TFile((basedirectory + "Wjets_600toInf_bdt.root").c_str(), "READ");
+
   TChain* wjetsTree = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
   wjetsTree->Add((basedirectory + "Wjets_100to200_bdt.root").c_str());
   wjetsTree->Add((basedirectory + "Wjets_200to400_bdt.root").c_str());
@@ -112,7 +115,43 @@ int plotVar()
   TTree* ttbarTree = static_cast<TTree*>(ttbarFile->Get("bdttree"));
   TTree* stopTree = static_cast<TTree*>(stopFile->Get("bdttree"));
 
+  TTree* wjetsTree1 = static_cast<TTree*>(wjetsFile1->Get("bdttree"));
+  TTree* wjetsTree2 = static_cast<TTree*>(wjetsFile2->Get("bdttree"));
+  TTree* wjetsTree3 = static_cast<TTree*>(wjetsFile3->Get("bdttree"));
+  TTree* wjetsTree4 = static_cast<TTree*>(wjetsFile4->Get("bdttree"));
+
   TTree* dataTree = static_cast<TTree*>(dataFile->Get("bdttree"));
+
+  float ttbarXS = 0;
+    ttbarTree->SetBranchAddress("XS", &ttbarXS);
+      ttbarTree->GetEntry(0);
+        std::cout << "ttbar cross section: " << ttbarXS << std::endl;
+
+  float signalXS = 0;
+    stopTree->SetBranchAddress("XS", &signalXS);
+      stopTree->GetEntry(0);
+        std::cout << "signal cross section: " << signalXS << std::endl;
+
+  float wjetsXS1 = 0;
+    wjetsTree1->SetBranchAddress("XS", &wjetsXS1);
+      wjetsTree1->GetEntry(0);
+        std::cout << "wjets cross section 100-200: " << wjetsXS1 << std::endl;
+
+  float wjetsXS2 = 0;
+    wjetsTree2->SetBranchAddress("XS", &wjetsXS2);
+      wjetsTree2->GetEntry(0);
+        std::cout << "wjets cross section 200-400: " << wjetsXS2 << std::endl;
+ 
+  float wjetsXS3 = 0;
+    wjetsTree3->SetBranchAddress("XS", &wjetsXS3);
+      wjetsTree3->GetEntry(0);
+        std::cout << "wjets cross section 400-600: " << wjetsXS3 << std::endl;
+ 
+  float wjetsXS4 = 0;
+    wjetsTree4->SetBranchAddress("XS", &wjetsXS4);
+      wjetsTree4->GetEntry(0);
+        std::cout << "wjets cross section 600-Inf: " << wjetsXS4 << std::endl;
+
 
   // Create canvas
   TCanvas * c1 = new TCanvas("Stop","Stop", 800, 600);
@@ -223,7 +262,8 @@ int plotVar()
       //TCut mt = "mt < 70";
       TCut jethbpt = "JetHBpt < 80";
 
-      TCut selection = emu && ISRjet && met && jetLepMass && jethbpt && lepPt;
+//      TCut selection = emu && ISRjet && met;
+      TCut selection = "1";
 
       // Fill histogram(s) signal & BACKGROUND & DATA
       ttbarTree->Draw((vvariable[i].GetExpression()+">>"+sttbarH).c_str(),"XS*5000/Nevt"*(selection),"goff");
@@ -346,16 +386,16 @@ int plotVar()
       gError->GetXaxis()->SetRangeUser(vvariable[i].GetXMin(),vvariable[i].GetXMax());
 
       // Save individual plots as .pdf and .C
-      c2->SaveAs(("plots/"+vvariable[i].GetName()+".pdf").c_str());
-      c2->SaveAs(("plots/"+vvariable[i].GetName()+".C").c_str());
+      //c2->SaveAs(("plots/"+vvariable[i].GetName()+".png").c_str());
+      //c2->SaveAs(("plots/"+vvariable[i].GetName()+".C").c_str());
 
       delete c2;
     }
   //delete the vectors
 
   //Save file with all the plots
-  c1->SaveAs("plots/plot.pdf");
-  c1->SaveAs("plots/plot.C");
+  c1->SaveAs("plots/plot_noPreSel.png");
+  c1->SaveAs("plots/plot_noPreSel.C");
 
   return 0;
 }
