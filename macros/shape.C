@@ -92,7 +92,7 @@ int shape()
 //  vvariable.push_back(JetHBPt);
 
   // Open input file(s)
-  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/nTuples_v2016-07-12/";
+  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/LepFix/";
 
   TFile* ttbarFile = new TFile((basedirectory + "TTJets_LO_bdt.root").c_str(), "READ");
 
