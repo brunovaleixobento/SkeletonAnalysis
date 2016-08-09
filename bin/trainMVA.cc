@@ -25,6 +25,7 @@ int main(int argc, char** argv)
 {
   std::string signalFileName = "signal.root";
   std::string backgroundFileName = "background.root";
+  int nTree = 400;
 
   if(argc < 2)
   {
@@ -48,6 +49,13 @@ int main(int argc, char** argv)
 
     if(argument == "--backgroundFile")
       backgroundFileName = argv[++i];
+
+    if(argument == "--nTree")
+    {
+      std::stringstream converter;
+      converter << argv[++i];
+      converter >> nTree;
+    }
   }
 
   std::cout << "==> Start TMVAClassification" << std::endl;
@@ -64,6 +72,13 @@ int main(int argc, char** argv)
 
   // Base BDT
   factory->AddVariable("Jet1Pt",'F');
+  factory->AddVariable("LepPt",'F');
+  factory->AddVariable("LepChg",'F');
+  factory->AddVariable("LepEta",'F');
+  factory->AddVariable("Met",'F');
+  factory->AddVariable("mt",'F');
+  factory->AddVariable("HT20",'F');
+  factory->AddVariable("NbLoose30",'F');
 
   TFile *inputsignal = TFile::Open( signalFileName.c_str() );
   TFile *inputbkg= TFile::Open( backgroundFileName.c_str() );
@@ -85,8 +100,13 @@ int main(int argc, char** argv)
 
   factory->PrepareTrainingAndTestTree( mycuts, mycutb, "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=EqualNumEvents" );
 
+  std::stringstream converter;
+  converter << "!H:!V:";
+  converter << "NTrees=" << nTree << ":MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning";
+
   factory->BookMethod( TMVA::Types::kBDT, "BDT",
-                       "!H:!V:NTrees=400:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning" );
+                       converter.str().c_str());
+                       //"!H:!V:NTrees=10:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning" );
 
   factory->TrainAllMethods();
   factory->TestAllMethods();
