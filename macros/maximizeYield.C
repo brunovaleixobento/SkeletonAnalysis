@@ -355,7 +355,7 @@ void EndPrint(ofstream &yieldFile)
 
 int maximizeYield(){
   // Open input file(s)
-  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/nTuples_v2016-07-12/";
+  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/LepFix/";
 
   // Create chains
   TChain* wjetsChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
