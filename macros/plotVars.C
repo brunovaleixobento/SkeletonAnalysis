@@ -119,7 +119,7 @@ TCut FindBestParameters(vector<process> vprocess, variable cosdeltaphi, variable
 
         tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
         tmp_error = sqrt(abs(tmp_error));
-	
+
 	if(tmp>FOM_a)
 	  {
 	    FOM_a = tmp;
@@ -134,11 +134,11 @@ TCut FindBestParameters(vector<process> vprocess, variable cosdeltaphi, variable
   TCut BestCut_b = "1";
   double FOM_b = 0, eFOM_b = 0;
   double step_b = 2/intervals;
-  
+
   for(int i=0; i<intervals;i++)
     {
       TCut cut = BestCut_a || (q80.GetExpression() + "<-" + cosdeltaphi.GetExpression() + "+" +  std::to_string(i*step_b)).c_str();
-			       
+
       //cut.SetName((BestCut_a.GetName() + "||" + q80.GetExpression() + "<-" + cosdeltaphi.GetExpression() + "+" +  std::to_string(i*step_b)).c_str());
 
         BG = countEvt(vprocess[0],cut*initial_cut) + countEvt(vprocess[1],cut*initial_cut);
@@ -147,7 +147,7 @@ TCut FindBestParameters(vector<process> vprocess, variable cosdeltaphi, variable
 
         tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
         tmp_error = sqrt(abs(tmp_error));
-	
+
 	if(tmp>FOM_b)
 	  {
 	    FOM_b=tmp;
@@ -180,22 +180,22 @@ int plotVars()
   variable Q80("Q80","Q80",40,-1,1,"Q80 [GeV]");
   variable JetLepMass("JetLepMass","JetLepMass",20,0,250,"M_{Jet+Lep}");
   variable JetHBPt("JetHBpt","JetHBpt",20,0,500,"p_{T} (JetHB)");
+  variable Nbloose("NbLoose30","NbLoose30",10,0,8,"N_b loose");
 
 //  vvariable.push_back(LepPt);
 //  vvariable.push_back(LepEta);
 //  vvariable.push_back(Njet);
-//  vvariable.push_back(Jet1Pt);
+  vvariable.push_back(Jet1Pt);
 //  vvariable.push_back(Jet2Pt);
 //  vvariable.push_back(Jet1Eta);
-//  vvariable.push_back(Met);
+//  vvariable.push_back(Nbloose);
+  vvariable.push_back(Met);
 //  vvariable.push_back(DrJet1Lep);
 //  vvariable.push_back(DrJet2Lep);
 //  vvariable.push_back(mt);
 //  vvariable.push_back(HT20);
-
-  vvariable.push_back(CosDPhi);
-  vvariable.push_back(Q80);
-
+//  vvariable.push_back(CosDPhi);
+//  vvariable.push_back(Q80);
 //  vvariable.push_back(HT30);
 //  vvariable.push_back(JetLepMass);
 //  vvariable.push_back(JetHBPt);
@@ -221,7 +221,7 @@ int plotVars()
   ttbarChain->Add((basedirectory + "TTJets_LO_bdt.root").c_str());
 
   TChain* stopChain = new TChain("bdttree");
-  ttbarChain->Add((basedirectory + "T2DegStop_300_270_bdt.root").c_str());
+  stopChain->Add((basedirectory + "T2DegStop_300_270_bdt.root").c_str());
 
   //vector of processes
   vector<process> vprocess;
@@ -237,7 +237,7 @@ int plotVars()
   // Create canvas
   TCanvas * c1 = new TCanvas("Stop","Stop", 800, 600);
 
-  c1->Divide(2,1);
+  c1->Divide(2,2);
 
   // TH2 plot
 
@@ -250,11 +250,6 @@ int plotVars()
   TH2D *wjetsH = new TH2D(swjetsH.c_str(), "wjets", vvariable[0].GetBins(), vvariable[0].GetXMin(), vvariable[0].GetXMax(), vvariable[1].GetBins(), vvariable[1].GetXMin(), vvariable[1].GetXMax());
   TH2D *stopH = new TH2D(sstopH.c_str(), "Signal", vvariable[0].GetBins(), vvariable[0].GetXMin(), vvariable[0].GetXMax(), vvariable[1].GetBins(), vvariable[1].GetXMin(), vvariable[1].GetXMax());
   TH2D *backgroundH = new TH2D(sbackgroundH.c_str(), "Background", vvariable[0].GetBins(), vvariable[0].GetXMin(), vvariable[0].GetXMax(), vvariable[1].GetBins(), vvariable[1].GetXMin(), vvariable[1].GetXMax());
-
-  TLine *reta = new TLine(-1,-1,0.8,0.8);
-  TLine *retamais = new TLine(-1,-0.8,0.8,1);
-  TLine *retamenos = new TLine(-1,-1.2,0.8,0.6);
-
 
   ttbarH->SetFillColor(kGreen-7);
   ttbarH->SetLineColor(kGreen-7);
@@ -279,18 +274,12 @@ int plotVars()
   TCut cosDeltaPhi = "CosDeltaPhi < 0.8";
   TCut mtFOM = "mt > 100";
 
-  //  TCut rectangle = "Q80>CosDeltaPhi+0.2 || Q80<CosDeltaPhi-0.2 || Q80<-CosDeltaPhi-0.4";
-
   TCut preSel = emu && ISRjet && met;
   preSel.SetName("PreSelection");
 
-  TCut selection1 = preSel && cosDeltaPhi;
- 
-  TCut rectangle = FindBestParameters(vprocess,CosDPhi,Q80,selection1);
- 
-  TCut selection = selection1 && rectangle;
+  TCut selection = preSel;
   selection.SetName("Selection");
-  
+
   // Fill Histograms
 
   ttbarChain->Draw((vvariable[1].GetExpression() + ":" + vvariable[0].GetExpression() +">>"+sttbarH).c_str(),"XS*5000/Nevt"*(selection),"goff");
@@ -303,40 +292,44 @@ int plotVars()
   gStyle->SetOptStat(0);
 
   c1->cd(1);
-  backgroundH->Draw("COLZ");
-  reta->Draw("same");
-  retamais->Draw("same");
-  retamenos->Draw("same");
+//  backgroundH->Draw("COLZ");
+  wjetsH->Draw("COLZ");
   c1->cd(2);
+  ttbarH->Draw("COLZ");
+  c1->cd(3);
   stopH->Draw("COLZ");
 
-  backgroundH->GetXaxis()->SetTitle("Cos #Delta #phi");
-  backgroundH->GetYaxis()->SetTitle("Q_{80}");
+
+  string Xlabel = vvariable[0].GetLeg();
+  string Ylabel = vvariable[1].GetLeg();
+
+  backgroundH->GetXaxis()->SetTitle(Xlabel.c_str());
+  backgroundH->GetYaxis()->SetTitle(Ylabel.c_str());
   backgroundH->GetZaxis()->SetTitle("Evt.");
   backgroundH->GetZaxis()->SetLabelSize(0.03);
   backgroundH->GetZaxis()->SetTitleOffset(0.5);
 
-  ttbarH->GetXaxis()->SetTitle("Cos #Delta #phi");
-  ttbarH->GetYaxis()->SetTitle("Q_{80}");
+  ttbarH->GetXaxis()->SetTitle(Xlabel.c_str());
+  ttbarH->GetYaxis()->SetTitle(Ylabel.c_str());
   ttbarH->GetZaxis()->SetTitle("Evt.");
   ttbarH->GetZaxis()->SetLabelSize(0.03);
   ttbarH->GetZaxis()->SetTitleOffset(0.5);
 
-  wjetsH->GetXaxis()->SetTitle("Cos #Delta #phi");
-  wjetsH->GetYaxis()->SetTitle("Q_{80}");
+  wjetsH->GetXaxis()->SetTitle(Xlabel.c_str());
+  wjetsH->GetYaxis()->SetTitle(Ylabel.c_str());
   wjetsH->GetZaxis()->SetTitle("Evt.");
   wjetsH->GetZaxis()->SetLabelSize(0.03);
   wjetsH->GetZaxis()->SetTitleOffset(0.5);
 
-  stopH->GetXaxis()->SetTitle("Cos #Delta #phi");
-  stopH->GetYaxis()->SetTitle("Q_{80}");
+  stopH->GetXaxis()->SetTitle(Xlabel.c_str());
+  stopH->GetYaxis()->SetTitle(Ylabel.c_str());
   stopH->GetZaxis()->SetTitle("Evt.");
   stopH->GetZaxis()->SetLabelSize(0.03);
   stopH->GetZaxis()->SetTitleOffset(0.5);
 
   // Save file with all the plots
-  c1->SaveAs("plots/plots2D/plot2D_CosDeltaPhiQ80-background_CosDeltaPhi08-mt100.png");
-  c1->SaveAs("plots/plots2D/plot2D_CosDeltaPhiQ80-background_CosDeltaPhi08-mt100.C");
+  c1->SaveAs(("plots/plots2D/plot2D_" + vvariable[0].GetName() + "_" + vvariable[1].GetName() + ".png").c_str());
+  c1->SaveAs(("plots/plots2D/plot2D_" + vvariable[0].GetName() + "_" + vvariable[1].GetName() + ".C").c_str());
 
   return 0;
 }
