@@ -80,6 +80,12 @@ int main(int argc, char** argv)
   factory->AddVariable("HT20",'F');
   factory->AddVariable("NbLoose30",'F');
 
+  factory->AddVariable("Njet",'F');
+  factory->AddVariable("JetHBpt",'F');
+  factory->AddVariable("DrJetHBLep",'F');
+
+  factory->AddVariable("Jet1Eta",'F');
+
   TFile *inputsignal = TFile::Open( signalFileName.c_str() );
   TFile *inputbkg= TFile::Open( backgroundFileName.c_str() );
 
@@ -102,7 +108,7 @@ int main(int argc, char** argv)
 
   std::stringstream converter;
   converter << "!H:!V:";
-  converter << "NTrees=" << nTree << ":MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning";
+  converter << "NTrees=" << nTree << ":MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:MinNodeSize=1.5%";
 
   factory->BookMethod( TMVA::Types::kBDT, "BDT",
                        converter.str().c_str());

@@ -68,7 +68,9 @@ int main(int argc, char** argv)
   TMVA::Tools::Instance();
   TMVA::Reader *reader = new TMVA::Reader("!Color:!Silent");
 
-  float Jet1Pt, LepPt, LepChg, LepEta, Met, mt, HT20, Nbloose30, Njet, JetHBpt, DrJetHBLep;
+  float Jet1Pt, LepPt, LepEta, Met, mt, HT20, JetHBpt, DrJetHBLep;
+  float LepChg, Nbloose30, Njet;
+  float Jet1Eta;
 
   reader->AddVariable("Jet1Pt", &Jet1Pt);
   reader->AddVariable("LepPt", &LepPt);
@@ -78,9 +80,12 @@ int main(int argc, char** argv)
   reader->AddVariable("mt", &mt);
   reader->AddVariable("HT20", &HT20);
   reader->AddVariable("NbLoose30", &Nbloose30);
+
   reader->AddVariable("Njet", &Njet);
   reader->AddVariable("JetHBpt", &JetHBpt);
   reader->AddVariable("DrJetHBLep", &DrJetHBLep);
+
+  reader->AddVariable("Jet1Eta", &Jet1Eta);
 
   reader->BookMVA("BDT method", "macros/weights/TMVAClassification_BDT.weights.xml");
 
@@ -100,9 +105,12 @@ int main(int argc, char** argv)
     tree->SetBranchAddress("mt", &mt);
     tree->SetBranchAddress("HT20", &HT20);
     tree->SetBranchAddress("NbLoose30", &Nbloose30);
+
     tree->SetBranchAddress("Njet", &Njet);
     tree->SetBranchAddress("JetHBpt", &JetHBpt);
     tree->SetBranchAddress("DrJetHBLep", &DrJetHBLep);
+
+    tree->SetBranchAddress("Jet1Eta", &Jet1Eta);
 
     TBranch * branch = tree->Branch("BDT",&bdt);
 

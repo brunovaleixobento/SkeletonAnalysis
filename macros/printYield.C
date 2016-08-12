@@ -148,7 +148,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, double** matrix, double*
 {
   ofstream yieldFile;
 
-  string filename = "Tables/case2";
+  string filename = "case1New";
 
   // Begin document
   yieldFile.open (filename + ".tex");
@@ -190,7 +190,7 @@ void Print(vector<process> vprocess, vector<TCut> vcut, double** matrix, double*
   // Background
   for(int i=0; i<int(vprocess.size()-1); i++)
   {
-    yieldFile << vprocess[i].GetName(); 
+    yieldFile << vprocess[i].GetName();
     for(int j=0; j<int(vcut.size()+1); j++)
     {
       yieldFile << " & " << matrix[i][j] << " $\\pm$" << matrixError[i][j];
@@ -322,14 +322,16 @@ int printYield(){
   //vcut.push_back(met*ISRjet*emu);
   vcut.push_back(preSel);
   vcut.push_back(Met540*preSel);
-  vcut.push_back(CosDeltaPhi025*Met540*preSel);
-  vcut.push_back(ht20700*CosDeltaPhi025*Met540*preSel);
+  vcut.push_back(mt100*Met540*preSel);
+  vcut.push_back(jet1Pt550*mt100*Met540*preSel);
+//  vcut.push_back(CosDeltaPhi025*Met540*preSel);
+//  vcut.push_back(ht20700*CosDeltaPhi025*Met540*preSel);
 
   vcut[1].SetName("Met $>$ 540");
-  vcut[2].SetName("Cos$\\Delta \\phi <$ 0.25");
-//  vcut[2].SetName("$m_T >$ 100");
-  vcut[3].SetName("$H_T$ (20) $>$ 700");
-//  vcut[3].SetName("$p_T$ (Jet) $>$ 550");
+//  vcut[2].SetName("$Cos(\\Delta \\phi)$ $<$ 0.25");
+  vcut[2].SetName("$m_T >$ 100");
+//  vcut[3].SetName("$H_T$ (20) $>$ 700");
+  vcut[3].SetName("$p_T$ (Jet) $>$ 550");
 
   // Create matrix
   double** matrix = new double*[vprocess.size()+3];
