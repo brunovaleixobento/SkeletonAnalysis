@@ -204,6 +204,7 @@ void YieldMaximize(vector<process> vprocess, variable variable, TCut initial_cut
 
   double f = 0.2;
   double tmp = 0;
+  double tmp1 = 0, tmp2 = 0;
 
   if(side == 0 || side == 2)
   {
@@ -214,12 +215,28 @@ void YieldMaximize(vector<process> vprocess, variable variable, TCut initial_cut
 
         BG = countEvt(vprocess[0],cut*initial_cut) + countEvt(vprocess[1],cut*initial_cut);
         signal = countEvt(vprocess[2],cut*initial_cut);
-        tmp = signal/sqrt(BG+f*f*BG*BG);
+//        tmp = signal/sqrt(BG+f*f*BG*BG);
+        tmp1 = (signal + BG)*log(((signal+BG)*(BG+f*f*BG*BG))/(BG*BG+(signal + BG)*f*f*BG*BG));
+        tmp2 = (1/(f*f))*log(1 + (f*f*BG*BG*signal)/(BG*(BG+f*f*BG*BG)));
+        tmp = sqrt(2*(tmp1-tmp2));
 
-        double tmp_error = 0;
-        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
-        tmp_error = sqrt(abs(tmp_error));
+        double tmp_error = 0, nB1, nB21, nB22, nB23, nB, d, eB, eS, Log1, Log2;
+//        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+        Log1 = log(((1+0.04*BG)*(BG+signal))/(BG+0.04*BG*(BG+signal)));
+        Log2 = -25*log(1+(0.04*signal)/(1+0.04*BG));
+        d = sqrt(Log2 + (BG*signal)*Log1);
+        eS = signal*Log1/(sqrt(2)*d);
 
+        nB1 = (0.04*signal)/(pow(1+0.04*BG,2)*(1+0.04*signal/(1+0.04*BG)));
+        nB21 = -((1+0.04*BG)*(BG+signal)*(1+0.04*BG+0.04*(BG+signal)))/pow(BG+0.04*BG*(BG+signal),2);
+        nB22 = (1+0.04*BG)/(BG+0.04*BG*(BG+signal));
+        nB23 = (0.04*(BG+signal))/(BG+0.04*BG*(BG+signal));
+        nB = nB1+((BG+0.04*BG*(BG+signal))*(nB21+nB22+nB23))/(1+0.04*BG)+Log1; 
+        eB = BG*nB/d;
+
+        tmp_error = eS*eS + eB*eB;
+        tmp_error = sqrt(tmp_error);
+        
         xpointsL[i] = variable.GetXMin() + i*step;
 
         if(BG != 0)
@@ -251,11 +268,34 @@ void YieldMaximize(vector<process> vprocess, variable variable, TCut initial_cut
 
         BG = countEvt(vprocess[0],cut*initial_cut) + countEvt(vprocess[1],cut*initial_cut);
         signal = countEvt(vprocess[2],cut*initial_cut);
-        tmp = signal/sqrt(BG+0.2*0.2*BG*BG);
+//        tmp = signal/sqrt(BG+0.2*0.2*BG*BG);
+        tmp1 = (signal + BG)*log(((signal+BG)*(BG+f*f*BG*BG))/(BG*BG+(signal + BG)*f*f*BG*BG));
+        tmp2 = (1/(f*f))*log(1 + (f*f*BG*BG*signal)/(BG*(BG+f*f*BG*BG)));
+        tmp = sqrt(2*(tmp1-tmp2));
 
-        double tmp_error = 0;
-        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
-        tmp_error = sqrt(abs(tmp_error));
+
+       // double tmp_error = 0;
+       // tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+       // tmp_error = sqrt(abs(tmp_error));
+
+        double tmp_error = 0, nB1, nB21, nB22, nB23, nB, d, eB, eS, Log1, Log2;
+     //        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+      Log1 = log(((1+0.04*BG)*(BG+signal))/(BG+0.04*BG*(BG+signal)));
+      Log2 = -25*log(1+(0.04*signal)/(1+0.04*BG));
+      d = sqrt(Log2 + (BG*signal)*Log1);
+      eS = signal*Log1/(sqrt(2)*d);
+
+      nB1 = (0.04*signal)/(pow(1+0.04*BG,2)*(1+0.04*signal/(1+0.04*BG)));
+      nB21 = -((1+0.04*BG)*(BG+signal)*(1+0.04*BG+0.04*(BG+signal)))/pow(BG+0.04*BG*(BG+signal),2);
+      nB22 = (1+0.04*BG)/(BG+0.04*BG*(BG+signal));
+      nB23 = (0.04*(BG+signal))/(BG+0.04*BG*(BG+signal));
+      nB = nB1+((BG+0.04*BG*(BG+signal))*(nB21+nB22+nB23))/(1+0.04*BG)+Log1; 
+      eB = BG*nB/d;
+
+      tmp_error = eS*eS + eB*eB;
+      tmp_error = sqrt(tmp_error);
+
+
 
         xpointsR[i] = variable.GetXMin() + i*step;
 
@@ -304,18 +344,45 @@ void GetFOM(vector<process> vprocess, TCut cut)
   double f = 0.2;
   double BG = countEvt(vprocess[0],cut) + countEvt(vprocess[1],cut);
   double signal = countEvt(vprocess[2],cut);
-  double tmp = signal/sqrt(BG+f*f*BG*BG);
 
-  double tmp_error = 0;
-  tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
-  tmp_error = sqrt(abs(tmp_error));
+  double tmp = 0, tmp1 = 0, tmp2 = 0;
+
+//  double tmp = signal/sqrt(BG+f*f*BG*BG);
+//  double tmp = 2*(sqrt(signal+BG)-sqrt(BG));
+  tmp1 = (signal + BG)*log(((signal+BG)*(BG+f*f*BG*BG))/(BG*BG+(signal + BG)*f*f*BG*BG));
+  tmp2 = (1/(f*f))*log(1 + (f*f*BG*BG*signal)/(BG*(BG+f*f*BG*BG)));
+  tmp = sqrt(2*(tmp1-tmp2));
+
+
+//  double tmp_error = 0;
+//  tmp_error = signal/(signal + BG) + (1/sqrt(signal + BG) - 1/sqrt(BG))*(1/sqrt(signal + BG) - 1/sqrt(BG))*BG;
+//  tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+//  tmp_error = sqrt(abs(tmp_error));
+
+     double tmp_error = 0, nB1, nB21, nB22, nB23, nB, d, eB, eS, Log1, Log2;
+     //        tmp_error = 1/(BG+f*f*BG*BG) + (signal*signal*(1+2*f*f*BG)*(1+2*f*f*BG))/(4*(BG+f*f*BG*BG)*(BG+f*f*BG*BG)*(BG+f*f*BG*BG));
+      Log1 = log(((1+0.04*BG)*(BG+signal))/(BG+0.04*BG*(BG+signal)));
+      Log2 = -25*log(1+(0.04*signal)/(1+0.04*BG));
+      d = sqrt(Log2 + (BG*signal)*Log1);
+      eS = signal*Log1/(sqrt(2)*d);
+
+      nB1 = (0.04*signal)/(pow(1+0.04*BG,2)*(1+0.04*signal/(1+0.04*BG)));
+      nB21 = -((1+0.04*BG)*(BG+signal)*(1+0.04*BG+0.04*(BG+signal)))/pow(BG+0.04*BG*(BG+signal),2);
+      nB22 = (1+0.04*BG)/(BG+0.04*BG*(BG+signal));
+      nB23 = (0.04*(BG+signal))/(BG+0.04*BG*(BG+signal));
+      nB = nB1+((BG+0.04*BG*(BG+signal))*(nB21+nB22+nB23))/(1+0.04*BG)+Log1;
+      eB = BG*nB/d;
+
+      tmp_error = eS*eS + eB*eB;
+      tmp_error = sqrt(tmp_error);
+
 
   std::cout << tmp << " +/- " << tmp_error << std::endl;
 }
 
 void StartPrint(vector<process> vprocess, ofstream &yieldFile)
 {
-  yieldFile.open ("BestCuts.tex");
+  yieldFile.open ("bdt.tex");
   yieldFile << "\\documentclass{article}" << std::endl;
 //  yieldFile << "\\usepackage[utf8]{inputenc}" << std::endl;
   yieldFile << "\\usepackage{cancel}" << std::endl;
@@ -349,13 +416,13 @@ void EndPrint(ofstream &yieldFile)
   yieldFile << "\\end{table}" << std::endl;
   yieldFile << "\\end{document}" << std::endl;
 
-  system("pdflatex BestCuts.tex");
-  system("gnome-open BestCuts.pdf");
+  system("pdflatex bdt.tex");
+  system("gnome-open bdt.pdf");
 }
 
 int maximizeYield(){
   // Open input file(s)
-  string basedirectory = "/lstore/cms/cbeiraod/Stop4Body/LepFix/";
+  string basedirectory = "/home/t3cms/brucms16/CMSSW_8_0_14/src/UserCode/SkeletonAnalysis/bdtFiles/";
 
   // Create chains
   TChain* wjetsChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
@@ -403,6 +470,7 @@ int maximizeYield(){
   variable JetLepMass("JetLepMass","JetLepMass",20,0,250,"M_{Jet+Lep}");
   variable JetHBPt("$p_{T}$ (JetHB)","JetHBpt",20,0,1000,"p_{T} (JetHB)");
   variable Q80("$Q_{80}$","Q80",20,-2,1,"Q80 [GeV]");
+  variable BDToutput("BDT output", "BDT", 20, -1, 1, "BDT output");
 
 //  vvariable.push_back(LepPt);
 //  vvariable.push_back(Jet1Pt);
@@ -415,6 +483,7 @@ int maximizeYield(){
 //  vvariable.push_back(DrJet1Lep);
 //  vvariable.push_back(DrJet2Lep);
 //  vvariable.push_back(CosDPhi);
+  vvariable.push_back(BDToutput);
 
   // Create TCuts
   TCut null = "1";
@@ -449,7 +518,8 @@ int maximizeYield(){
   // Create VCut
 //  vector<TCut> vcut;
 
-  TCut selection = preSel && Met540 && mt100;
+  TCut selection = preSel;
+//  TCut selection = preSel;
   selection.SetName("Selection");
 
   // Maximize
@@ -514,14 +584,14 @@ int maximizeYield(){
         graphR->Draw();
       }
 
-      c1->SaveAs(("plots/FOM_Met540-mt100_" + vvariable[i].GetExpression() + ".png").c_str());
+      c1->SaveAs(("plots/" + vvariable[i].GetExpression() + ".png").c_str());
       delete c1;
       delete graphR;
       delete graphL;
     }
   EndPrint(BestCuts);
 
-  GetFOM(vprocess, preselrectangle);
+//  GetFOM(vprocess, selection);
 
   return 0;
 }
