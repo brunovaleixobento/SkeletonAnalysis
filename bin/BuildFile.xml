@@ -6,6 +6,7 @@
 <use name="UserCode/SkeletonAnalysis"/>
 <environment>
   <bin name="trainMVA"         file="trainMVA.cc">      </bin>
+  <bin name="applyMVA"         file="applyMVA.cc">      </bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>
