@@ -68,8 +68,8 @@ int main(int argc, char** argv)
   TMVA::Tools::Instance();
   TMVA::Reader *reader = new TMVA::Reader("!Color:!Silent");
 
-  float Jet1Pt, LepPt, LepEta, Met, mt, HT20, JetHBpt, DrJetHBLep;
-  float LepChg, Nbloose30, Njet;
+  float Jet1Pt, LepPt, LepEta, Met, mt, HT20, LepChg, Nbloose30;
+  float Njet, DrJetHBLep, JetHBpt;
   float Jet1Eta;
 
   reader->AddVariable("Jet1Pt", &Jet1Pt);
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 
   reader->AddVariable("Jet1Eta", &Jet1Eta);
 
-  reader->BookMVA("BDT method", "macros/weights/TMVAClassification_BDT.weights.xml");
+  reader->BookMVA("BDT method", "weights/TMVAClassification_BDT.weights.xml");
 
   for(auto & File : FileNames)
   {

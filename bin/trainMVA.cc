@@ -108,7 +108,7 @@ int main(int argc, char** argv)
 
   std::stringstream converter;
   converter << "!H:!V:";
-  converter << "NTrees=" << nTree << ":MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:MinNodeSize=1.5%";
+  converter << "NTrees=" << nTree << ":VarTransform=D:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning:MinNodeSize=1.5%";
 
   factory->BookMethod( TMVA::Types::kBDT, "BDT",
                        converter.str().c_str());
