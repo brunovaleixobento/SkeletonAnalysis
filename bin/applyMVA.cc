@@ -69,7 +69,7 @@ int main(int argc, char** argv)
   TMVA::Reader *reader = new TMVA::Reader("!Color:!Silent");
 
   float Jet1Pt, LepPt, LepEta, Met, mt, HT20, LepChg, Nbloose30;
-  float Njet, DrJetHBLep, JetHBpt;
+//  float Njet, DrJetHBLep, JetHBpt;
   float Jet1Eta;
 
   reader->AddVariable("Jet1Pt", &Jet1Pt);
@@ -81,9 +81,9 @@ int main(int argc, char** argv)
   reader->AddVariable("HT20", &HT20);
   reader->AddVariable("NbLoose30", &Nbloose30);
 
-  reader->AddVariable("Njet", &Njet);
-  reader->AddVariable("JetHBpt", &JetHBpt);
-  reader->AddVariable("DrJetHBLep", &DrJetHBLep);
+//  reader->AddVariable("Njet", &Njet);
+//  reader->AddVariable("JetHBpt", &JetHBpt);
+//  reader->AddVariable("DrJetHBLep", &DrJetHBLep);
 
   reader->AddVariable("Jet1Eta", &Jet1Eta);
 
@@ -106,9 +106,9 @@ int main(int argc, char** argv)
     tree->SetBranchAddress("HT20", &HT20);
     tree->SetBranchAddress("NbLoose30", &Nbloose30);
 
-    tree->SetBranchAddress("Njet", &Njet);
-    tree->SetBranchAddress("JetHBpt", &JetHBpt);
-    tree->SetBranchAddress("DrJetHBLep", &DrJetHBLep);
+//    tree->SetBranchAddress("Njet", &Njet);
+//    tree->SetBranchAddress("JetHBpt", &JetHBpt);
+//    tree->SetBranchAddress("DrJetHBLep", &DrJetHBLep);
 
     tree->SetBranchAddress("Jet1Eta", &Jet1Eta);
 

@@ -17,8 +17,8 @@
 
 using std::string;
 
-string fileName =  "PCA9003P_Jet1Eta";
-string directory = "PCA9003_Jet1Eta/";
+string fileName =  "PCABaseSETDBkgd_Jet1Eta";
+string directory = "PCABaseSET_Jet1Eta/";
 string basedirectory = "/home/t3cms/brucms16/CMSSW_8_0_14/src/UserCode/SkeletonAnalysis/macros/bdtFiles/" + fileName + "/";
 
 string to_string_with_precision(double a_value, int n = 3)

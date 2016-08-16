@@ -80,9 +80,9 @@ int main(int argc, char** argv)
   factory->AddVariable("HT20",'F');
   factory->AddVariable("NbLoose30",'F');
 
-  factory->AddVariable("Njet",'F');
-  factory->AddVariable("JetHBpt",'F');
-  factory->AddVariable("DrJetHBLep",'F');
+//  factory->AddVariable("Njet",'F');
+//  factory->AddVariable("JetHBpt",'F');
+//  factory->AddVariable("DrJetHBLep",'F');
 
   factory->AddVariable("Jet1Eta",'F');
 
