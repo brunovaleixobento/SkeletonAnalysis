@@ -1,0 +1,10 @@
+SET9003 - Pedrame
+SET9103 - SET9003 - mt + CosDeltaPhi + Q80
+
+SET9003P - SET9003 with PCA
+SET9003GaussP - SET9003 with G -> PCA
+
+SET9003D - SET9003 with Decorrelation
+SET9003GaussD - SET9003 with G -> Decorrelation
+
+SET9003_DecMt = SET9103
