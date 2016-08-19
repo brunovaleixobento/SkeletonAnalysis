@@ -17,8 +17,8 @@
 
 using std::string;
 
-string fileName =  "PCABaseSETDBkgd_Jet1Eta";
-string directory = "PCABaseSET_Jet1Eta/";
+string fileName =  "PCA9303D";
+string directory = "PCA9303/";
 string basedirectory = "/home/t3cms/brucms16/CMSSW_8_0_14/src/UserCode/SkeletonAnalysis/macros/bdtFiles/" + fileName + "/";
 
 string to_string_with_precision(double a_value, int n = 3)
@@ -170,15 +170,20 @@ void YieldMaximize(vector<process> vprocess, variable variable, TCut initial_cut
   double tmp = 0;
   double tmp1 = 0, tmp2 = 0;
 
+  double wjets1, wjets2, wjets3, wjets4, ttbar;
+
   if(side == 0 || side == 2)
   {
     for(int i=0; i<intervals; i++)
     {
+        BG = 0;
         TCut cut = (variable.GetExpression() + "<" + std::to_string(variable.GetXMin() + i*step)).c_str();
         cut.SetName((variable.GetExpression() + " $<$ " + to_string_with_precision(variable.GetXMin() + i*step, 3)).c_str());
 
-        BG = countEvt(vprocess[0],cut*initial_cut) + countEvt(vprocess[1],cut*initial_cut);
-        signal = countEvt(vprocess[2],cut*initial_cut);
+        for(int i=0; i<vprocess.size()-1; i++)
+           BG += countEvt(vprocess[i],cut*initial_cut);
+
+        signal = countEvt(vprocess[5],cut*initial_cut);
 //      tmp = signal/sqrt(BG+f*f*BG*BG);
         tmp1 = (signal + BG)*log(((signal+BG)*(BG+f*f*BG*BG))/(BG*BG+(signal + BG)*f*f*BG*BG));
         tmp2 = (1/(f*f))*log(1 + (f*f*BG*BG*signal)/(BG*(BG+f*f*BG*BG)));
@@ -229,11 +234,14 @@ void YieldMaximize(vector<process> vprocess, variable variable, TCut initial_cut
   {
     for(int i=0; i<intervals; i++)
     {
+        BG = 0;
         TCut cut = (variable.GetExpression() + ">" + std::to_string(variable.GetXMin() + i*step)).c_str();
         cut.SetName((variable.GetExpression() + " $>$ " + to_string_with_precision(variable.GetXMin() + i*step, 3)).c_str());
 
-        BG = countEvt(vprocess[0],cut*initial_cut) + countEvt(vprocess[1],cut*initial_cut);
-        signal = countEvt(vprocess[2],cut*initial_cut);
+        for(int i=0; i<vprocess.size()-1; i++)
+           BG += countEvt(vprocess[i],cut*initial_cut);
+
+        signal = countEvt(vprocess[5],cut*initial_cut);
 //        tmp = signal/sqrt(BG+0.2*0.2*BG*BG);
         tmp1 = (signal + BG)*log(((signal+BG)*(BG+f*f*BG*BG))/(BG*BG+(signal + BG)*f*f*BG*BG));
         tmp2 = (1/(f*f))*log(1 + (f*f*BG*BG*signal)/(BG*(BG+f*f*BG*BG)));
@@ -304,8 +312,14 @@ void YieldMaximize(vector<process> vprocess, variable variable, TCut initial_cut
       ratio_Error = ratioL_Error;
     }
 
+      wjets1 = countEvt(vprocess[0],bestCut);
+      wjets2 = countEvt(vprocess[1],bestCut);
+      wjets3 = countEvt(vprocess[2],bestCut);
+      wjets4 = countEvt(vprocess[3],bestCut);
+      ttbar = countEvt(vprocess[4], bestCut);
+
   std::cout << bestCut << std::endl;
-  yieldFile << variable.GetName() << " & " << bestCut.GetName() << " & " << std::setprecision(3) << ratio << " $\\pm$ " << std::setprecision(3) << abs(ratio_Error) << "&" << signal << "&" << BG << "\\\\" << std::endl;
+  yieldFile << variable.GetName() << " & " << bestCut.GetName() << " & " << std::setprecision(3) << ratio << " $\\pm$ " << std::setprecision(3) << abs(ratio_Error) << "&" << signal << "&" << wjets1 << "&" << wjets2 << "&" << wjets3 << "&" << wjets4 << "&" << ttbar << "\\\\" << std::endl;
 }
 
 void GetFOM(vector<process> vprocess, TCut cut)
@@ -313,9 +327,17 @@ void GetFOM(vector<process> vprocess, TCut cut)
   cout.setf(ios::floatfield, ios::fixed);
   cout << setprecision(2);
 
+  double wjets1, wjets2, wjets3, wjets4, ttbar;
+
+      wjets1 = countEvt(vprocess[0],cut);
+      wjets2 = countEvt(vprocess[1],cut);
+      wjets3 = countEvt(vprocess[2],cut);
+      wjets4 = countEvt(vprocess[3],cut);
+      ttbar = countEvt(vprocess[4], cut);
+
   double f = 0.2;
-  double BG = countEvt(vprocess[0],cut) + countEvt(vprocess[1],cut);
-  double signal = countEvt(vprocess[2],cut);
+  double BG = wjets1 + wjets2 + wjets3 + wjets4 + ttbar;
+  double signal = countEvt(vprocess[5],cut);
 
   double tmp = 0, tmp1 = 0, tmp2 = 0;
 
@@ -356,6 +378,8 @@ void GetFOM(vector<process> vprocess, TCut cut)
      tmp_error = sqrt(tmp_error);
 
      std::cout << tmp << " +/- " << tmp_error << std::endl;
+     std::cout << wjets1 << "   " << wjets2 << "   " << wjets3 << "   " << wjets4 <<  std::endl;
+     std::cout << ttbar << std::endl;
   }
 }
 
@@ -375,9 +399,10 @@ void StartPrint(vector<process> vprocess, ofstream &yieldFile)
   yieldFile << "\\begin{table}[!h]" << std::endl;
   yieldFile << "\\centering" << std::endl;
 
-  string col = "lllll";
-  string l1 = "Variable & Cut & FOM & Signal & Background";
+  string col = "lllllllll";
+  string l1 = "Variable & Cut & FOM & Signal & Wjets1 & Wjets2 & Wjets3 & Wjets4 & ttbar";
 
+//  yieldFile << "\\scalebox{0.5}{" << std::endl;
   yieldFile << "\\begin{tabular}{" << col << "}" << std::endl;
   yieldFile << "\\hline" << std::endl;
 
@@ -404,11 +429,17 @@ int maximizeYield(){
 //  string basedirectory = "~cbeiraod/local-area/Stop4Body/NodeSizeScan/SET9003/";
 
   // Create chains
-  TChain* wjetsChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
-  wjetsChain->Add((basedirectory + "Wjets_100to200_bdt.root").c_str());
-  wjetsChain->Add((basedirectory + "Wjets_200to400_bdt.root").c_str());
-  wjetsChain->Add((basedirectory + "Wjets_400to600_bdt.root").c_str());
-  wjetsChain->Add((basedirectory + "Wjets_600toInf_bdt.root").c_str());
+  TChain* wjetsChain1 = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
+  wjetsChain1->Add((basedirectory + "Wjets_100to200_bdt.root").c_str());
+
+  TChain* wjetsChain2 = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
+  wjetsChain2->Add((basedirectory + "Wjets_200to400_bdt.root").c_str());
+
+  TChain* wjetsChain3 = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
+  wjetsChain3->Add((basedirectory + "Wjets_400to600_bdt.root").c_str());
+
+  TChain* wjetsChain4 = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
+  wjetsChain4->Add((basedirectory + "Wjets_600toInf_bdt.root").c_str());
 
   TChain* ttbarChain = new TChain("bdttree"); //creates a chain to process a Tree called "bdttree"
   ttbarChain->Add((basedirectory + "TTJets_LO_bdt.root").c_str());
@@ -421,11 +452,18 @@ int maximizeYield(){
 
   vector<process> vprocess;
 
-  process pwjets(wjetsChain,"wjets");
+  process pwjets1(wjetsChain1,"wjets1");
+  process pwjets2(wjetsChain2,"wjets2");
+  process pwjets3(wjetsChain3,"wjets3");
+  process pwjets4(wjetsChain4,"wjets4");
+
   process pttbar(ttbarChain,"ttbar");
   process psignal(stopChain,"signal");
 
-  vprocess.push_back(pwjets);
+  vprocess.push_back(pwjets1);
+  vprocess.push_back(pwjets2);
+  vprocess.push_back(pwjets3);
+  vprocess.push_back(pwjets4);
   vprocess.push_back(pttbar);
   vprocess.push_back(psignal);
 
@@ -494,7 +532,7 @@ int maximizeYield(){
 //  Create VCut
 //  vector<TCut> vcut;
 
-  TCut selection = preSel;
+  TCut selection = preSel && "BDT > 0.23";
   selection.SetName("Selection");
 
   // Maximize
@@ -506,7 +544,7 @@ int maximizeYield(){
   vector<double*> yFOML;
   vector<double*> eFOML;
 
-  ofstream BestCuts;
+/*  ofstream BestCuts;
   StartPrint(vprocess, BestCuts);
   for(int i=0; i<int(vvariable.size()); i++)
     {
@@ -570,7 +608,7 @@ int maximizeYield(){
     }
   EndPrint(BestCuts);// */
 
-//  GetFOM(vprocess, selection);
+  GetFOM(vprocess, selection);
 
   return 0;
 }
